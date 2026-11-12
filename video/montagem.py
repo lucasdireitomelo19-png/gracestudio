@@ -38,7 +38,11 @@ def ts(x):
     return f"{int(x // 3600)}:{int(x % 3600 // 60):02d}:{x % 60:05.2f}"
 
 
-def render(RAW, A, SUBS, B, OUT, tmp_name):
+def render(RAW, A, SUBS, B, OUT, tmp_name, music=None, music_vol=None, music_start=0.45):
+    music = music or MUSIC
+    music_vol = MUSIC_VOL if music_vol is None else music_vol
+    def src(f):  # "pasta/arquivo" = relativo a work/; senão, da pasta RAW
+        return f"{WORK}/{f}.MOV" if "/" in f else f"{RAW}/{f}.MOV"
     tmp = f"{WORK}/tmp_{tmp_name}"
     os.makedirs(tmp, exist_ok=True)
     A = [a if len(a) == 4 else (*a, 1.0) for a in A]
@@ -73,7 +77,7 @@ def render(RAW, A, SUBS, B, OUT, tmp_name):
         zoom = f"crop=iw/{z}:ih/{z}," if z != 1.0 else ""
         vf = (f"{zoom}scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},"
               f"fps={FPS},format=yuv420p")
-        run(["ffmpeg", "-v", "error", "-y", "-ss", f"{s:.3f}", "-i", f"{RAW}/{f}.MOV",
+        run(["ffmpeg", "-v", "error", "-y", "-ss", f"{s:.3f}", "-i", src(f),
              "-t", f"{d:.3f}", "-an", "-vf", vf, "-c:v", "libx264", "-preset", "fast",
              "-crf", "16", out])
         parts.append(out)
@@ -86,7 +90,7 @@ def render(RAW, A, SUBS, B, OUT, tmp_name):
     aparts = []
     for k, (f, s, e, _) in enumerate(A):
         out, d = f"{tmp}/a{k}.wav", e - s
-        run(["ffmpeg", "-v", "error", "-y", "-ss", f"{s:.3f}", "-i", f"{RAW}/{f}.MOV",
+        run(["ffmpeg", "-v", "error", "-y", "-ss", f"{s:.3f}", "-i", src(f),
              "-t", f"{d:.3f}", "-vn", "-ac", "2", "-ar", "48000",
              "-af", f"afade=t=in:d=0.02,afade=t=out:st={d-0.03:.3f}:d=0.03", out])
         aparts.append(out)
@@ -127,11 +131,11 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     out = f"{WORK}/out/{OUT}"
     os.makedirs(os.path.dirname(out), exist_ok=True)
     run(["ffmpeg", "-v", "error", "-y", "-i", f"{tmp}/video.mp4", "-i", f"{tmp}/voice.wav",
-         "-loop", "1", "-i", f"{ASSETS}/template_ibama.png", "-i", MUSIC,
+         "-loop", "1", "-i", f"{ASSETS}/template_ibama.png", "-i", music,
          "-filter_complex",
          f"[0:v]{GRADE},subtitles={tmp}/subs.ass:fontsdir={ASSETS}[g];"
          f"[2:v]scale={W}:{H},format=rgba[t];[g][t]overlay=0:0:shortest=1,format=yuv420p[v];"
-         f"[3:a]atrim=start=0.45,asetpts=PTS-STARTPTS,aresample=48000,volume={MUSIC_VOL},"
+         f"[3:a]atrim=start={music_start},asetpts=PTS-STARTPTS,aresample=48000,volume={music_vol},"
          f"afade=t=out:st={total-1.5:.3f}:d=1.5[m];[1:a][m]amix=inputs=2:duration=first:normalize=0[a]",
          "-map", "[v]", "-map", "[a]", "-t", f"{total:.3f}",
          "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-profile:v", "high",
