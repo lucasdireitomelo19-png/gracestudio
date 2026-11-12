@@ -7,9 +7,10 @@ import sys, wave
 import numpy as np
 
 SR = 48000
-BPM = 112
+BPM = float(sys.argv[3]) if len(sys.argv) > 3 else 112
+TR = int(sys.argv[4]) if len(sys.argv) > 4 else 0   # transposição em semitons
 BEAT = 60 / BPM
-rng = np.random.default_rng(7)
+rng = np.random.default_rng(7 + TR)
 
 
 def env(n, a=0.002, r=0.1):
@@ -83,10 +84,10 @@ def make(seconds):
         note = riff[i]
         if note is not None:
             hold = eighth * (2 if (i + 1 < 16 and riff[(i + 1) % 16] is None) else 1)
-            seg = power_chord(midi(note), hold)
+            seg = power_chord(midi(note + TR), hold)
             gtr[pos:pos + hold] += seg[: len(gtr) - pos]
         # baixo
-        bseg = np.tanh(2 * saw(midi(bass[i]), eighth)) * env(eighth, 0.003, 0.25)
+        bseg = np.tanh(2 * saw(midi(bass[i] + TR), eighth)) * env(eighth, 0.003, 0.25)
         bss[pos:pos + eighth] += bseg[: len(bss) - pos]
         # bateria: bumbo 1 e 3 (+ síncope), caixa 2 e 4, chimbal em colcheias
         beat_in_bar = i % 8

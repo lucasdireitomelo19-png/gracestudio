@@ -88,7 +88,7 @@ def add(buf, pos, seg, gain=1.0):
         buf[pos:end] += gain * seg[: end - pos]
 
 
-def render(style, seconds):
+def render(style, seconds, bpm_override=None, transpose=0):
     cfg = {
         #            bpm, progressão (raízes midi), acordes menores?, ...
         "premium":     (100, [57, 53, 60, 55]),   # Am F C G — elegante, sóbrio
@@ -98,6 +98,8 @@ def render(style, seconds):
         "corporativo": (106, [60, 65, 57, 67]),   # C F Am G — positivo
     }[style]
     bpm, prog = cfg
+    bpm = bpm_override or bpm
+    prog = [r + transpose for r in prog]
     beat = 60 / bpm
     bar = int(4 * beat * SR)
     total = int(seconds * SR)
@@ -173,7 +175,9 @@ def render(style, seconds):
 if __name__ == "__main__":
     style, out = sys.argv[1], sys.argv[2]
     secs = float(sys.argv[3]) if len(sys.argv) > 3 else 45
-    y = render(style, secs)
+    bpm = float(sys.argv[4]) if len(sys.argv) > 4 else None
+    tr = int(sys.argv[5]) if len(sys.argv) > 5 else 0
+    y = render(style, secs, bpm, tr)
     with wave.open(out, "w") as w:
         w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR)
         w.writeframes((y * 32767).astype(np.int16).tobytes())

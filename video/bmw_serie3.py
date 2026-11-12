@@ -51,7 +51,7 @@ B = [(loc_start + k * step, step, f, s) for k, (f, s) in enumerate(BROLL)]
 
 if __name__ == "__main__":
     render(RAW, A, SUBS, B, "bmw_serie3_2k60.mp4", "serie3",
-           music=f"{WORK}/music/trilha_premium.wav",
+           music=f"{WORK}/music/trilha_house_serie3.wav",
            font="Soho Gothic Pro", bold=0,                 # IESA Regular (fina)
            ending=f"{ASSETS}/encerramento_bmw.mp4",        # encerramento BMW (carros) com fade preto
            flares=flares_locucao([loc_start], [loc_start + loc_len]))

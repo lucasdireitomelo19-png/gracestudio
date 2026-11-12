@@ -133,6 +133,25 @@ def render(RAW, A, SUBS, B, OUT, tmp_name, music=None, music_vol=None, music_sta
         t += e - s
     total = t
 
+    # Coberturas e flares vêm nos tempos dos cortes originais → reposiciona nos cortes ajustados
+    old_starts, t = [], 0.0
+    for _, s, e, _ in A_old:
+        old_starts.append(t)
+        t += e - s
+    old_durs = [e - s for _, s, e, _ in A_old]
+    new_durs = [e - s for _, s, e, _ in A]
+
+    def remap(tt):
+        for i in range(len(A_old)):
+            a0, d0 = old_starts[i], old_durs[i]
+            if a0 - 1e-6 <= tt < a0 + d0 - 1e-6 or i == len(A_old) - 1:
+                return starts[i] + (tt - a0) * new_durs[i] / d0
+        return tt
+
+    B = [(remap(bt), remap(bt + bd) - remap(bt), bf, bin_) for bt, bd, bf, bin_ in B]
+    if flares:
+        flares = [(remap(tc), ff) for tc, ff in flares]
+
     # Pedaços de vídeo da timeline: fala, a não ser onde há cobertura
     def a_piece(t0, t1):
         out = []

@@ -8,7 +8,7 @@ A = [
     ("IMG_9429", 18.05, 24.50),  # 2ª tomada
     ("IMG_9430", 3.00, 7.62),
     ("IMG_9431", 1.70, 5.08),    # "taxa 0% em até 24 vezes" (o IMG_9432 diz "24 meses", fora do roteiro)
-    ("IMG_9431", 6.15, 7.05),    # "e 3 anos de garantia" (corta a pausa e o "né?" final)
+    ("IMG_9431", 6.15, 7.05, 1.0, "trava"),  # "e 3 anos de garantia" (trava: logo depois vem o "né?")
     ("IMG_9433", 3.17, 7.66),
 ]
 
@@ -39,5 +39,5 @@ B = [
 
 if __name__ == "__main__":
     render(RAW, A, SUBS, B, "bmw_r1300rt_2k60.mp4", "rt",
-           music=f"{WORK}/music/trilha_aventura.wav",
+           music=f"{WORK}/music/trilha_aventura_b.wav",
            font="Soho Gothic Pro", bold=0)   # IESA Regular (fina) para BMW Motorrad

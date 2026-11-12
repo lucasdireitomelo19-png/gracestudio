@@ -85,6 +85,12 @@ def render(seconds=45, bpm=122, style="deep"):
         (48, [55, 59, 62, 64, 67]),   # Cmaj9
         (40, [55, 59, 62, 66, 67]),   # Em9
     ]
+    if style == "deep_d":     # Volvo XC60 — Dm9, Bbmaj9, Fmaj9, Cadd9
+        prog = [(38, [53, 57, 60, 64, 65]), (46, [53, 57, 58, 62, 65]),
+                (41, [52, 55, 57, 60, 64]), (36, [52, 55, 60, 62, 64])]
+    if style == "deep_g":     # BMW Série 3 — Gm9, Ebmaj9, Bbmaj9, F6/9
+        prog = [(43, [58, 62, 65, 69, 70]), (39, [55, 58, 62, 65, 67]),
+                (46, [57, 60, 62, 65, 69]), (41, [55, 57, 60, 62, 65])]
     if style in ("funky", "leve"):
         # Cmaj7 – Am7 – Dm7 – G9: maior, leve (MINI). "leve" = acordes longos como o deep
         prog = [
