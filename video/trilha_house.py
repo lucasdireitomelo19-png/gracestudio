@@ -70,7 +70,7 @@ def supersaw(freqs, n):
     return out / (4 * len(freqs))
 
 
-def render(seconds=45, bpm=122):
+def render(seconds=45, bpm=122, style="deep"):
     beat = 60 / bpm
     s16 = beat / 4
     bar = 4 * beat
@@ -85,6 +85,14 @@ def render(seconds=45, bpm=122):
         (48, [55, 59, 62, 64, 67]),   # Cmaj9
         (40, [55, 59, 62, 66, 67]),   # Em9
     ]
+    if style == "funky":
+        # Cmaj7 – Am7 – Dm7 – G9: maior, alegre, nu-disco (MINI)
+        prog = [
+            (48, [64, 67, 71, 72, 76]),   # Cmaj7
+            (45, [64, 67, 69, 72, 76]),   # Am7
+            (50, [65, 69, 72, 74, 77]),   # Dm7
+            (43, [65, 67, 71, 74, 81]),   # G9
+        ]
 
     def put(buf, pos, seg, g=1.0):
         e = min(len(buf), pos + len(seg))
@@ -96,7 +104,14 @@ def render(seconds=45, bpm=122):
         p0 = int(b * bar * SR)
         root, notes = prog[b % 4]
         # acordes sustentados no compasso (vão receber filtro + sidechain depois)
-        put(chords, p0, supersaw([midi(m) for m in notes], int(bar * SR)))
+        if style == "funky":
+            # stabs curtos e sincopados (padrão disco): 16ª 2, 5, 7, 10, 13, 15
+            for k in (2, 5, 7, 10, 13, 15):
+                n = int(s16 * 0.85 * SR)
+                put(chords, p0 + int(k * s16 * SR),
+                    supersaw([midi(m) for m in notes], n) * expenv(n, 0.09, 0.003), 2.8)
+        else:
+            put(chords, p0, supersaw([midi(m) for m in notes], int(bar * SR)))
         for q in range(4):
             pq = p0 + int(q * beat * SR)
             put(kick_t, pq, kick(int(0.35 * SR)))
@@ -111,6 +126,11 @@ def render(seconds=45, bpm=122):
             t = np.arange(nb) / SR
             bnote = (np.sin(2 * np.pi * f * t) + 0.3 * np.sin(4 * np.pi * f * t)) * expenv(nb, 0.18, 0.004)
             put(bass_t, pq + int(beat / 2 * SR), bnote)
+            if style == "funky":   # baixo de oitava pulando (disco)
+                nb3 = int(s16 * 0.8 * SR)
+                t3 = np.arange(nb3) / SR
+                put(bass_t, pq + int(3 * s16 * SR),
+                    np.sin(2 * np.pi * midi(root) * t3) * expenv(nb3, 0.07, 0.003), 0.7)
             if q == 3 and b % 2 == 1:
                 nb2 = int(s16 * 0.9 * SR)
                 t2 = np.arange(nb2) / SR
@@ -124,6 +144,8 @@ def render(seconds=45, bpm=122):
     for i in range(0, L, blk):
         tt = i / SR
         fc = 1400 + 2600 * min(1, tt / 12) + 600 * np.sin(2 * np.pi * tt / (bar * 2))
+        if style == "funky":
+            fc = 3500 + 1500 * np.sin(2 * np.pi * tt / (bar * 2))
         seg = chords[max(0, i - blk): i + blk]
         y = lp(seg, fc, 2)
         chords_f[i: i + blk] = y[-min(blk, L - i):] if i else y[:blk]
@@ -153,7 +175,8 @@ if __name__ == "__main__":
     out = sys.argv[1]
     secs = float(sys.argv[2]) if len(sys.argv) > 2 else 45
     bpm = float(sys.argv[3]) if len(sys.argv) > 3 else 122
-    y = render(secs, bpm)
+    style = sys.argv[4] if len(sys.argv) > 4 else "deep"   # deep (Volvo) | funky (MINI)
+    y = render(secs, bpm, style)
     with wave.open(out, "w") as w:
         w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR)
         w.writeframes((y * 32767).astype(np.int16).tobytes())
