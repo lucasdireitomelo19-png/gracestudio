@@ -193,6 +193,18 @@ def render(RAW, A, SUBS, B, OUT, tmp_name, music=None, music_vol=None, music_sta
         run(["ffmpeg", "-v", "error", "-y", "-ss", f"{s:.3f}", "-i", src(f),
              "-t", f"{d:.3f}", "-vn", "-ac", "2", "-ar", "48000",
              "-af", f"afade=t=in:d=0.02,afade=t=out:st={d-0.03:.3f}:d=0.03", out])
+        # nivela cada tomada (gravações em aparelhos diferentes têm volumes diferentes)
+        lu = subprocess.run(["ffmpeg", "-i", out, "-af", "ebur128", "-f", "null", "-"],
+                            capture_output=True, text=True).stderr
+        try:
+            i_lufs = float([l for l in lu.splitlines() if l.strip().startswith("I:")][-1].split()[1])
+            gain = max(-15.0, min(15.0, -24.0 - i_lufs))
+        except (IndexError, ValueError):
+            gain = 0.0
+        if abs(gain) > 1.0:
+            lv = out[:-4] + "_lv.wav"
+            run(["ffmpeg", "-v", "error", "-y", "-i", out, "-af", f"volume={gain:.1f}dB,alimiter=limit=0.95", lv])
+            os.replace(lv, out)
         aparts.append(out)
     with open(f"{tmp}/alist.txt", "w") as fh:
         fh.writelines(f"file '{p}'\n" for p in aparts)
