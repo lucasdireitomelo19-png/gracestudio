@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """BMW Motorrad — R 1300 GS Adventure, Super Sale (pasta Drive 1LTlrszZ...)."""
-from montagem import render, WORK, ASSETS
+from montagem import render, WORK
 
 RAW = f"{WORK}/bmw1/raw"
 
@@ -40,5 +40,5 @@ if __name__ == "__main__":
     # Fonte fina: IESA Regular (Soho Gothic Pro Regular)
     render(RAW, A, SUBS, B, "bmw_r1300gsa_2k60.mp4", "bmw1",
            music=f"{WORK}/music/trilha_original.wav", music_vol=0.085, music_start=0.0,
-           font="Soho Gothic Pro", bold=0, font_scale=1.0,
-           ending=f"{ASSETS}/encerramento_bmw.mp4")
+           font="Soho Gothic Pro", bold=0, font_scale=1.0)
+    # Sem encerramento: o "ENCERRAMENTO VÍDEOS BMW" é só para BMW carros, não para a Motorrad
