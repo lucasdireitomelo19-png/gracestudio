@@ -9,6 +9,7 @@ Cada vídeo é um arquivo de configuração (ver harley_*.py) com:
   OUT   nome do arquivo final
 """
 import os, subprocess
+import numpy as np
 
 W, H, FPS = 1440, 2560, 60   # 2K vertical, 60 fps
 BITRATE = "50M"              # taxa de bits final
@@ -44,6 +45,52 @@ def flares_locucao(cortes_entrada, cortes_saida):
             [(t, f"{ASSETS}/flare2.mov") for t in cortes_saida])
 
 
+_audio_cache = {}
+
+
+def _rms_db(path):
+    """Envelope de volume (dBFS) em janelas de 10 ms do áudio do arquivo."""
+    if path not in _audio_cache:
+        raw = subprocess.run(["ffmpeg", "-v", "error", "-i", path, "-vn", "-ac", "1", "-ar", "16000",
+                              "-f", "s16le", "-"], capture_output=True).stdout
+        x = np.frombuffer(raw, np.int16).astype(np.float32) / 32768
+        n = len(x) // 160
+        r = np.sqrt((x[: n * 160].reshape(n, 160) ** 2).mean(1)) + 1e-9
+        _audio_cache[path] = 20 * np.log10(r)
+    return _audio_cache[path]
+
+
+def ajustar_corte(path, s, e, max_fim=0.5, max_ini=0.2, quieto_ms=150, folga=0.20):
+    """Estica o fim do corte até a última palavra terminar (e o início até a primeira começar).
+    Fala = acima do piso de ruído + 5 dB (mínimo -52 dBFS); folga de 0,2 s após a última palavra."""
+    db = _rms_db(path)
+    piso = max(-52.0, float(np.percentile(db, 10)) + 5)
+    n = len(db)
+    q = quieto_ms // 10
+    # fim: anda para frente até achar `quieto_ms` seguidos abaixo do piso
+    i, run_q, fim = int(e * 100), 0, None
+    lim = min(n, int((e + max_fim) * 100))
+    while i < lim:
+        run_q = run_q + 1 if db[i] < piso else 0
+        if run_q >= q:
+            fim = (i - q + 1) / 100 + folga
+            break
+        i += 1
+    novo_e = e if fim is None and int(e * 100) >= n else (fim if fim is not None else e + max_fim)
+    novo_e = min(max(e, novo_e), n / 100 - 0.02)
+    # início: anda para trás enquanto ainda há fala antes do ponto marcado
+    j, run_q, ini = int(s * 100) - 1, 0, None
+    lim0 = max(0, int((s - max_ini) * 100))
+    while j >= lim0:
+        run_q = run_q + 1 if db[j] < piso else 0
+        if run_q >= q // 2:
+            ini = (j + q // 2) / 100 - 0.04
+            break
+        j -= 1
+    novo_s = min(s, ini if ini is not None else s - max_ini)
+    return max(0.0, novo_s), novo_e
+
+
 def run(cmd):
     subprocess.run(cmd, check=True)
 
@@ -62,7 +109,15 @@ def render(RAW, A, SUBS, B, OUT, tmp_name, music=None, music_vol=None, music_sta
         return f"{WORK}/{f}.MOV" if "/" in f else f"{RAW}/{f}.MOV"
     tmp = f"{WORK}/tmp_{tmp_name}"
     os.makedirs(tmp, exist_ok=True)
-    A = [a if len(a) == 4 else (*a, 1.0) for a in A]
+    # Entradas de A: (arquivo, ini, fim[, zoom[, "trava"]]) — "trava" = não ajustar o corte automaticamente
+    locked = [len(a) == 5 and a[4] == "trava" for a in A]
+    A = [(a[0], a[1], a[2], a[3] if len(a) >= 4 else 1.0) for a in A]
+    # Não cortar fala: estica o início/fim de cada corte até a fala realmente começar/terminar
+    A_old = list(A)
+    A = [(f, *ajustar_corte(src(f), s, e), z) if not lk else (f, s, e, z)
+         for (f, s, e, z), lk in zip(A, locked)]
+    SUBS = [(i, (A[i][1] if abs(s - A_old[i][1]) < 0.02 else s),
+             (A[i][2] if abs(e - A_old[i][2]) < 0.02 else e), txt) for i, s, e, txt in SUBS]
     # +1s no último plano: não corta a pessoa terminando de falar / sorrindo
     f_last, s_last, e_last, z_last = A[-1]
     dur_last = float(subprocess.run(
@@ -175,19 +230,31 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         fc += f"[g]format=gbrp[gr];[gr][fl{len(flares)}]blend=all_mode=screen,format=yuv420p[g2];"
     else:
         fc += "[g]null[g2];"
+    # duração total, incluindo o encerramento da marca (a música continua por baixo do logo)
+    ed = 0.0
+    if ending:
+        ed = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                                   "-of", "csv=p=0", ending], capture_output=True, text=True).stdout.strip())
+    full = total + ed
     fc += (f"[2:v]scale={W}:{H},format=rgba[t];[g2][t]overlay=0:0:shortest=1,format=yuv420p[v];"
            f"[3:a]atrim=start={music_start},asetpts=PTS-STARTPTS,loudnorm=I={MUSIC_LUFS}:TP=-9:LRA=15,aresample=48000,"
-           f"afade=t=out:st={total-1.5:.3f}:d=1.5[m];[1:a][m]amix=inputs=2:duration=first:normalize=0[a]")
+           f"aformat=channel_layouts=stereo,apad,atrim=duration={full:.3f},"
+           f"afade=t=out:st={full-1.5:.3f}:d=1.5[m];"
+           f"[1:a]aformat=channel_layouts=stereo,apad,atrim=duration={full:.3f}[vp];")
     if ending:
+        dms = int(round(total * 1000))
         # esmaecimento para o preto entre o último plano e o encerramento da marca
-        fc += (f";[v]trim=duration={total:.3f},setpts=PTS-STARTPTS,fade=t=out:st={total-FADE:.3f}:d={FADE}[vm];"
-               f"[a]atrim=duration={total:.3f},asetpts=PTS-STARTPTS[am];"
+        fc += (f"[v]trim=duration={total:.3f},setpts=PTS-STARTPTS,fade=t=out:st={total-FADE:.3f}:d={FADE}[vm];"
                f"[4:v]scale={W}:{H},fps={FPS},format=yuv420p,setsar=1,fade=t=in:st=0:d={FADE}[ve];"
-               f"[4:a]aresample=48000,aformat=channel_layouts=stereo[ae];"
-               f"[vm][am][ve][ae]concat=n=2:v=1:a=1[vo][ao]")
+               f"[vm][ve]concat=n=2:v=1:a=0[vo];"
+               f"[4:a]aresample=48000,aformat=channel_layouts=stereo,adelay={dms}|{dms},apad,"
+               f"atrim=duration={full:.3f}[ea];"
+               f"[vp][ea][m]amix=inputs=3:duration=first:normalize=0[ao]")
+    else:
+        fc += "[vp][m]amix=inputs=2:duration=first:normalize=0[a]"
     run(["ffmpeg", "-v", "error", "-y", *inputs, "-filter_complex", fc,
          "-map", "[vo]" if ending else "[v]", "-map", "[ao]" if ending else "[a]",
-         *([] if ending else ["-t", f"{total:.3f}"]),
+         "-t", f"{full:.3f}",
          "-c:v", "libx264", "-preset", "medium", "-b:v", BITRATE, "-minrate", BITRATE,
          "-maxrate", BITRATE, "-bufsize", BITRATE, "-x264-params", "nal-hrd=cbr:force-cfr=1",
          "-profile:v", "high", "-r", str(FPS),
