@@ -27,8 +27,8 @@ SUBS = [
 B = []
 
 if __name__ == "__main__":
-    # Fonte: Inter Light provisória até chegar o arquivo da fonte fina da BMW
+    # Fonte fina: IESA Regular (Soho Gothic Pro Regular)
     render(RAW, A, SUBS, B, "bmw_r1300gsa_2k60.mp4", "bmw1",
            music=f"{WORK}/music/trilha_original.wav", music_vol=0.085, music_start=0.0,
-           font="Inter Light", bold=0, font_scale=1.05,
+           font="Soho Gothic Pro", bold=0, font_scale=1.0,
            ending=f"{ASSETS}/encerramento_bmw.mp4")
