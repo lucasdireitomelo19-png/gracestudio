@@ -85,8 +85,8 @@ def render(seconds=45, bpm=122, style="deep"):
         (48, [55, 59, 62, 64, 67]),   # Cmaj9
         (40, [55, 59, 62, 66, 67]),   # Em9
     ]
-    if style == "funky":
-        # Cmaj7 – Am7 – Dm7 – G9: maior, alegre, nu-disco (MINI)
+    if style in ("funky", "leve"):
+        # Cmaj7 – Am7 – Dm7 – G9: maior, leve (MINI). "leve" = acordes longos como o deep
         prog = [
             (48, [64, 67, 71, 72, 76]),   # Cmaj7
             (45, [64, 67, 69, 72, 76]),   # Am7
@@ -175,7 +175,7 @@ if __name__ == "__main__":
     out = sys.argv[1]
     secs = float(sys.argv[2]) if len(sys.argv) > 2 else 45
     bpm = float(sys.argv[3]) if len(sys.argv) > 3 else 122
-    style = sys.argv[4] if len(sys.argv) > 4 else "deep"   # deep (Volvo) | funky (MINI)
+    style = sys.argv[4] if len(sys.argv) > 4 else "deep"   # deep (Volvo) | leve (MINI) | funky
     y = render(secs, bpm, style)
     with wave.open(out, "w") as w:
         w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR)

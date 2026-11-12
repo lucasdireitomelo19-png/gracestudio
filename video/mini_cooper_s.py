@@ -48,6 +48,6 @@ B = [(loc_start + k * step, step, f, s) for k, (f, s) in enumerate(BROLL)]
 
 if __name__ == "__main__":
     render(RAW, A, SUBS, B, "mini_cooper_s_2k60.mp4", "mini",
-           music=f"{WORK}/music/trilha_mini_funky.wav",
+           music=f"{WORK}/music/trilha_mini_leve.wav",
            font="Soho Gothic Pro", bold=0,   # IESA Regular (fina); MINI não tem encerramento
            flares=flares_locucao([loc_start], [loc_start + loc_len]))
