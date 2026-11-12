@@ -144,15 +144,22 @@ for i, s, e, text in SUBS:
 with open(f"{TMP}/subs.ass", "w") as fh:
     fh.write(ass)
 
-# Final: cor + legendas + template Ibama
-out = f"{ROOT}/out/harley_black_november_v3.mp4"
+# Trilha: "Big Rock" - Kevin MacLeod (incompetech.com), licença CC BY 4.0
+MUSIC = f"{ROOT}/music/big_rock.mp3"
+MUSIC_VOL = 0.22  # trilha bem baixa, por baixo da voz (~ volume 10 no CapCut)
+
+# Final: cor + legendas + template Ibama + trilha
+out = f"{ROOT}/out/harley_black_november_v4.mp4"
 os.makedirs(os.path.dirname(out), exist_ok=True)
 run(["ffmpeg", "-v", "error", "-y", "-i", f"{TMP}/video.mp4", "-i", f"{TMP}/voice.wav",
      "-loop", "1", "-i", f"{ASSETS}/template_ibama.png",
+     "-i", MUSIC,
      "-filter_complex",
      f"[0:v]{GRADE},subtitles={TMP}/subs.ass:fontsdir={ASSETS}[g];"
-     f"[2:v]scale={W}:{H},format=rgba[t];[g][t]overlay=0:0:shortest=1,format=yuv420p[v]",
-     "-map", "[v]", "-map", "1:a", "-t", f"{total:.3f}",
+     f"[2:v]scale={W}:{H},format=rgba[t];[g][t]overlay=0:0:shortest=1,format=yuv420p[v];"
+     f"[3:a]atrim=start=0.45,asetpts=PTS-STARTPTS,aresample=48000,volume={MUSIC_VOL},"
+     f"afade=t=out:st={total-1.5:.3f}:d=1.5[m];[1:a][m]amix=inputs=2:duration=first:normalize=0[a]",
+     "-map", "[v]", "-map", "[a]", "-t", f"{total:.3f}",
      "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-profile:v", "high",
      "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", out])
 print("OK", out, f"{total:.2f}s")
