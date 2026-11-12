@@ -33,7 +33,16 @@ SUBS = [
 dur = [a[2] - a[1] for a in A]
 loc_start = dur[0] + dur[1]
 loc_len = dur[2] + dur[3]
-BROLL = []   # (arquivo, entrada) — preenchido após conferir o enquadramento
+BROLL = [   # (arquivo, entrada) — trechos conferidos quadro a quadro, carro bem enquadrado
+    ("IMG_9376", 1.0),   # frente 3/4, carro inteiro
+    ("IMG_9377", 0.5),   # farol + placa IESA MINI
+    ("IMG_9368", 0.3),   # porta abrindo, logo projetado no chão
+    ("IMG_9364", 0.2),   # tela redonda central
+    ("IMG_9366", 0.2),   # volante
+    ("IMG_9381", 1.5),   # interior, bancos e teto solar
+    ("IMG_9379", 0.2),   # lanterna Union Jack
+    ("IMG_9380", 2.0),   # traseira 3/4, carro inteiro
+]
 step = loc_len / max(1, len(BROLL))
 B = [(loc_start + k * step, step, f, s) for k, (f, s) in enumerate(BROLL)]
 
