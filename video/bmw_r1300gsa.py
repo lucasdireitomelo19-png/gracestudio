@@ -15,8 +15,8 @@ A = [
 
 SUBS = [
     (0, 8.40, 10.25, "Pronta para\nqualquer aventura,"),
-    (0, 10.25, 13.90, "essa é a BMW Motorrad\nR 1300 GS Adventure."),
-    (1, 1.25, 2.42, "E no Super Sale,"),
+    (0, 10.25, 13.90, "essa é a BMW Motorrad\nR 1300 GSA."),
+    (1, 1.25, 2.42, "E na Super Sales,"),
     (1, 2.42, 3.40, "ela pode ser sua"),
     (1, 3.40, 6.40, "por R$ 156.990\nemplacada."),
     (2, 2.10, 3.90, "E ainda tem taxas\na partir de 0%"),
