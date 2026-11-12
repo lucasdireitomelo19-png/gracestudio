@@ -39,6 +39,6 @@ B = [
 if __name__ == "__main__":
     # Fonte fina: IESA Regular (Soho Gothic Pro Regular)
     render(RAW, A, SUBS, B, "bmw_r1300gsa_2k60.mp4", "bmw1",
-           music=f"{WORK}/music/trilha_original.wav", music_vol=0.085, music_start=0.0,
+           music=f"{WORK}/music/trilha_aventura.wav",
            font="Soho Gothic Pro", bold=0, font_scale=1.0)
     # Sem encerramento: o "ENCERRAMENTO VÍDEOS BMW" é só para BMW carros, não para a Motorrad

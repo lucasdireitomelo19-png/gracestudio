@@ -45,4 +45,4 @@ B = [(loc_start + k * step, step, f, s) for k, (f, s) in enumerate(broll)]
 if __name__ == "__main__":
     # Trilha original gerada por trilha_rock.py (sem direitos de terceiros, não precisa de crédito)
     render(RAW, A, SUBS, B, "harley_entrada60_2k60.mp4", "entrada60",
-           music=f"{WORK}/music/trilha_original.wav", music_vol=0.085, music_start=0.0)
+           music=f"{WORK}/music/trilha_original.wav")

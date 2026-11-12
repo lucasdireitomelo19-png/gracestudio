@@ -38,4 +38,4 @@ broll = [("IMG_9188", 0.8), ("IMG_9189", 0.6), ("IMG_9191", 1.2), ("IMG_9193", 1
 B = [(loc_start + k * 1.05, 1.05, f, s) for k, (f, s) in enumerate(broll)]
 
 if __name__ == "__main__":
-    render(RAW, A, SUBS, B, "harley_avista_2k60.mp4", "avista")  # trilha: Big Rock (CC BY, pede crédito)
+    render(RAW, A, SUBS, B, "harley_avista_2k60.mp4", "avista")  # trilha: rock original (padrão do modelo)
