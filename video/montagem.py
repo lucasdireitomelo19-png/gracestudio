@@ -32,6 +32,17 @@ MUSIC = f"{WORK}/music/trilha_original.wav"   # rock (Harley)
 MUSIC_LUFS = -30    # trilha nivelada bem baixa, ~16 dB abaixo da voz (~ volume 10 no CapCut)
 
 
+# Transições
+FLARE_PEAK, FLARE_IN, FLARE_OUT = 1.72, 1.45, 2.05   # pico do flash e trecho usado do arquivo (s)
+FADE = 0.4                             # esmaecimento preto antes do encerramento da marca
+
+
+def flares_locucao(cortes_entrada, cortes_saida):
+    """Lista de flares: flash branco ao entrar na locução, dourado ao voltar para a pessoa."""
+    return ([(t, f"{ASSETS}/flare1.mov") for t in cortes_entrada] +
+            [(t, f"{ASSETS}/flare2.mov") for t in cortes_saida])
+
+
 def run(cmd):
     subprocess.run(cmd, check=True)
 
@@ -41,8 +52,9 @@ def ts(x):
 
 
 def render(RAW, A, SUBS, B, OUT, tmp_name, music=None, music_vol=None, music_start=0.0,
-           font="Soho Gothic Pro", bold=1, font_scale=1.0, ending=None):
-    """ending: vídeo de encerramento da marca, emendado no fim (sem legenda/template)."""
+           font="Soho Gothic Pro", bold=1, font_scale=1.0, ending=None, flares=None):
+    """ending: vídeo de encerramento da marca, emendado no fim com esmaecimento preto.
+    flares: [(tempo_do_corte, arquivo)] — flash rápido nos cortes pessoa falando <-> locução."""
     fsize = round(FONT_SIZE * font_scale)
     music = music or MUSIC
     def src(f):  # "pasta/arquivo" = relativo a work/; senão, da pasta RAW
@@ -134,17 +146,36 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     # Final: cor + legendas + template Ibama + trilha
     out = f"{WORK}/out/{OUT}"
     os.makedirs(os.path.dirname(out), exist_ok=True)
-    run(["ffmpeg", "-v", "error", "-y", "-i", f"{tmp}/video.mp4", "-i", f"{tmp}/voice.wav",
-         "-loop", "1", "-i", f"{ASSETS}/template_ibama.png", "-i", music,
-         "-filter_complex",
-         f"[0:v]{GRADE},subtitles={tmp}/subs.ass:fontsdir={ASSETS}[g];"
-         f"[2:v]scale={W}:{H},format=rgba[t];[g][t]overlay=0:0:shortest=1,format=yuv420p[v];"
-         f"[3:a]atrim=start={music_start},asetpts=PTS-STARTPTS,loudnorm=I={MUSIC_LUFS}:TP=-9:LRA=15,aresample=48000,"
-         f"afade=t=out:st={total-1.5:.3f}:d=1.5[m];[1:a][m]amix=inputs=2:duration=first:normalize=0[a]"
-         + (f";[v]trim=duration={total:.3f},setpts=PTS-STARTPTS[vm];[a]atrim=duration={total:.3f},asetpts=PTS-STARTPTS[am];"
-            f"[4:v]scale={W}:{H},fps={FPS},format=yuv420p,setsar=1[ve];[4:a]aresample=48000,aformat=channel_layouts=stereo[ae];"
-            f"[vm][am][ve][ae]concat=n=2:v=1:a=1[vo][ao]" if ending else ""),
-         *(["-i", ending] if ending else []),
+    inputs = ["-i", f"{tmp}/video.mp4", "-i", f"{tmp}/voice.wav",
+              "-loop", "1", "-i", f"{ASSETS}/template_ibama.png", "-i", music]
+    if ending:
+        inputs += ["-i", ending]                       # entrada 4
+    fc = f"[0:v]{GRADE},subtitles={tmp}/subs.ass:fontsdir={ASSETS}[g];"
+    # Flares (overlay rápido em modo screen) nos cortes pessoa falando <-> locução
+    if flares:
+        fc += f"color=black:s={W}x{H}:r={FPS}:d={total:.3f},format=gbrp[fl0];"
+        for k, (tc, ffile) in enumerate(flares):
+            idx = 4 + (1 if ending else 0) + k
+            inputs += ["-i", ffile]
+            # pico do flash em FLARE_PEAK s no arquivo → alinhado ao corte tc
+            t0 = tc - (FLARE_PEAK - FLARE_IN)
+            fc += (f"[{idx}:v]trim=start={FLARE_IN}:end={FLARE_OUT},setpts=PTS-STARTPTS+{t0:.3f}/TB,"
+                   f"fps={FPS},scale={W}:{H},format=gbrp[fk{k}];"
+                   f"[fl{k}][fk{k}]overlay=0:0:eof_action=pass[fl{k+1}];")
+        fc += f"[g]format=gbrp[gr];[gr][fl{len(flares)}]blend=all_mode=screen,format=yuv420p[g2];"
+    else:
+        fc += "[g]null[g2];"
+    fc += (f"[2:v]scale={W}:{H},format=rgba[t];[g2][t]overlay=0:0:shortest=1,format=yuv420p[v];"
+           f"[3:a]atrim=start={music_start},asetpts=PTS-STARTPTS,loudnorm=I={MUSIC_LUFS}:TP=-9:LRA=15,aresample=48000,"
+           f"afade=t=out:st={total-1.5:.3f}:d=1.5[m];[1:a][m]amix=inputs=2:duration=first:normalize=0[a]")
+    if ending:
+        # esmaecimento para o preto entre o último plano e o encerramento da marca
+        fc += (f";[v]trim=duration={total:.3f},setpts=PTS-STARTPTS,fade=t=out:st={total-FADE:.3f}:d={FADE}[vm];"
+               f"[a]atrim=duration={total:.3f},asetpts=PTS-STARTPTS[am];"
+               f"[4:v]scale={W}:{H},fps={FPS},format=yuv420p,setsar=1,fade=t=in:st=0:d={FADE}[ve];"
+               f"[4:a]aresample=48000,aformat=channel_layouts=stereo[ae];"
+               f"[vm][am][ve][ae]concat=n=2:v=1:a=1[vo][ao]")
+    run(["ffmpeg", "-v", "error", "-y", *inputs, "-filter_complex", fc,
          "-map", "[vo]" if ending else "[v]", "-map", "[ao]" if ending else "[a]",
          *([] if ending else ["-t", f"{total:.3f}"]),
          "-c:v", "libx264", "-preset", "medium", "-b:v", BITRATE, "-minrate", BITRATE,
