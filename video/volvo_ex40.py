@@ -2,13 +2,13 @@
 """Volvo EX40 Plus (pasta Drive Volvo/1).
 A frase do roteiro "100% elétrico, o Volvo EX40 combina design contemporâneo…" não foi gravada.
 """
-from montagem import render, WORK, ASSETS, flares_locucao
+from montagem import render, WORK, ASSETS
 
 RAW = f"{WORK}/volvo1/raw"
 
 A = [
     ("IMG_9225", 1.17, 3.63),
-    ("IMG_9251", 12.08, 13.35),  # LOCUÇÃO sobre a imagem do carro na rua
+    ("IMG_9251", 10.60, 13.35),  # carro elétrico chegando em silêncio + ele fala pela janela (olhando para a câmera)
     ("IMG_9243", 1.06, 5.15),
     ("IMG_9248", 7.30, 9.85),    # 2ª tomada
     ("IMG_9249", 12.86, 17.99),  # 2ª tomada (a 1ª tem pausa longa no meio do preço)
@@ -27,12 +27,11 @@ SUBS = [
     (5, 4.00, 5.66, "Grupo IESA.\nVamos juntos!"),
 ]
 
-B = []   # a locução já é a imagem do carro (IMG_9251)
+B = []   # tudo olhando para a câmera → sem sobreposição e sem flare
 dur = [a[2] - a[1] for a in A]
 
 if __name__ == "__main__":
     render(RAW, A, SUBS, B, "volvo_ex40_2k60.mp4", "ex40",
            music=f"{WORK}/music/trilha_calmo.wav",
            font="Volvo Centum App", bold=0,
-           ending=f"{ASSETS}/encerramento_volvo.mp4",
-           flares=flares_locucao([dur[0]], [dur[0] + dur[1]]))
+           ending=f"{ASSETS}/encerramento_volvo.mp4")
