@@ -40,14 +40,15 @@ SUBS = [
 
 # Coberturas (B-roll): (índice da fala, segundos dentro da fala, duração, arquivo, entrada no bruto)
 B = [
-    (1, 1.00, 1.00, "IMG_9189", 0.6),
-    (1, 2.00, 1.07, "IMG_9197", 0.8),
-    (3, 2.30, 1.00, "IMG_9191", 1.2),
-    (3, 3.30, 1.00, "IMG_9193", 1.5),
-    (3, 4.30, 1.00, "IMG_9194", 1.5),
-    (3, 5.30, 1.00, "IMG_9187", 0.8),
-    (3, 6.30, 1.00, "IMG_9198", 1.2),
-    (3, 7.30, 0.90, "IMG_9199", 2.0),
+    # só durante a locução lida no celular (IMG_9184, fala 3), cobrindo ela inteira
+    (3, 0.00, 1.05, "IMG_9188", 0.8),
+    (3, 1.05, 1.05, "IMG_9189", 0.6),
+    (3, 2.10, 1.05, "IMG_9191", 1.2),
+    (3, 3.15, 1.05, "IMG_9193", 1.5),
+    (3, 4.20, 1.05, "IMG_9194", 1.5),
+    (3, 5.25, 1.05, "IMG_9197", 0.8),
+    (3, 6.30, 1.05, "IMG_9198", 1.2),
+    (3, 7.35, 1.05, "IMG_9199", 2.0),
 ]
 
 # Filtro de cor (aproximação de 4K 20% + Gastronômico 30% + Hasselblad 20%)
@@ -116,6 +117,7 @@ def ts(x):
     return f"{h}:{m:02d}:{sec:05.2f}"
 
 FONT_SIZE = 66
+LINE_GAP = 60  # distância entre linhas (antes ~80)
 ass = f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: {W}
@@ -134,14 +136,16 @@ Y = int(H * 0.72)
 for i, s, e, text in SUBS:
     base = a_start(i) - A[i][1]
     st, en = base + s, base + e
-    t = text.replace("\n", "\\N")
-    ass += f"Dialogue: 0,{ts(st)},{ts(en)},Shd,,0,0,0,,{{\\pos({W//2+3},{Y+4})\\blur14}}{t}\n"
-    ass += f"Dialogue: 1,{ts(st)},{ts(en)},Txt,,0,0,0,,{{\\pos({W//2},{Y})}}{t}\n"
+    lines = text.split("\n")
+    for j, line in enumerate(lines):
+        y = round(Y + (j - (len(lines) - 1) / 2) * LINE_GAP)
+        ass += f"Dialogue: 0,{ts(st)},{ts(en)},Shd,,0,0,0,,{{\\pos({W//2+3},{y+4})\\blur14}}{line}\n"
+        ass += f"Dialogue: 1,{ts(st)},{ts(en)},Txt,,0,0,0,,{{\\pos({W//2},{y})}}{line}\n"
 with open(f"{TMP}/subs.ass", "w") as fh:
     fh.write(ass)
 
 # Final: cor + legendas + template Ibama
-out = f"{ROOT}/out/harley_black_november_v1.mp4"
+out = f"{ROOT}/out/harley_black_november_v2.mp4"
 os.makedirs(os.path.dirname(out), exist_ok=True)
 run(["ffmpeg", "-v", "error", "-y", "-i", f"{TMP}/video.mp4", "-i", f"{TMP}/voice.wav",
      "-loop", "1", "-i", f"{ASSETS}/template_ibama.png",
