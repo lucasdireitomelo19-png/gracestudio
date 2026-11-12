@@ -32,7 +32,7 @@ d_taxas = A[2][2] - A[2][1]
 B = [
     (t_modelo, (d0 - t_modelo) / 2, "IMG_9447", 0.5),
     (t_modelo + (d0 - t_modelo) / 2, (d0 - t_modelo) / 2, "IMG_9449", 0.8),
-    (t_taxas, d_taxas / 2, "IMG_9448", 4.0),
+    (t_taxas, d_taxas / 2, "IMG_9448", 7.6),   # trecho com a moto enquadrada de frente (aos 4s a câmera ainda está girando)
     (t_taxas + d_taxas / 2, d_taxas / 2, "IMG_9446", 2.5),
 ]
 
