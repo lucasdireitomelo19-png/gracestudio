@@ -46,7 +46,7 @@ B = [(loc_start + k * step, step, f, s) for k, (f, s) in enumerate(BROLL)]
 
 if __name__ == "__main__":
     render(RAW, A, SUBS, B, "volvo_xc60_2k60.mp4", "xc60",
-           music=f"{WORK}/music/trilha_calmo.wav",
+           music=f"{WORK}/music/trilha_house.wav",
            font="Volvo Centum App", bold=0,                 # fonte Volvo
            ending=f"{ASSETS}/encerramento_volvo.mp4",       # encerramento Volvo com fade preto
            flares=flares_locucao([loc_start], [loc_start + loc_len]))

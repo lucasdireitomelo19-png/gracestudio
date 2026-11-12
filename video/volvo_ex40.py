@@ -32,6 +32,6 @@ dur = [a[2] - a[1] for a in A]
 
 if __name__ == "__main__":
     render(RAW, A, SUBS, B, "volvo_ex40_2k60.mp4", "ex40",
-           music=f"{WORK}/music/trilha_calmo.wav",
+           music=f"{WORK}/music/trilha_house.wav",
            font="Volvo Centum App", bold=0,
            ending=f"{ASSETS}/encerramento_volvo.mp4")
