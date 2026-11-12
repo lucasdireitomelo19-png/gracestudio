@@ -34,7 +34,8 @@ MUSIC_LUFS = -30    # trilha nivelada bem baixa, ~16 dB abaixo da voz (~ volume 
 
 # Transições
 FLARE_PEAK, FLARE_IN, FLARE_OUT = 1.72, 1.45, 2.05   # pico do flash e trecho usado do arquivo (s)
-FADE = 0.4                             # esmaecimento preto antes do encerramento da marca
+TAIL = 1.0                             # segundo extra no fim do último plano (sorriso final)
+FADE = 0.4                            # esmaecimento preto antes do encerramento da marca
 
 
 def flares_locucao(cortes_entrada, cortes_saida):
@@ -62,6 +63,15 @@ def render(RAW, A, SUBS, B, OUT, tmp_name, music=None, music_vol=None, music_sta
     tmp = f"{WORK}/tmp_{tmp_name}"
     os.makedirs(tmp, exist_ok=True)
     A = [a if len(a) == 4 else (*a, 1.0) for a in A]
+    # +1s no último plano: não corta a pessoa terminando de falar / sorrindo
+    f_last, s_last, e_last, z_last = A[-1]
+    dur_last = float(subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", src(f_last)],
+        capture_output=True, text=True).stdout.strip() or e_last)
+    e_new = min(e_last + TAIL, dur_last - 0.05)
+    A[-1] = (f_last, s_last, max(e_last, e_new), z_last)
+    SUBS = [(i, s, (A[-1][2] if (i == len(A) - 1 and abs(e - e_last) < 0.05) else e), txt)
+            for i, s, e, txt in SUBS]
     starts, t = [], 0.0
     for _, s, e, _ in A:
         starts.append(t)
