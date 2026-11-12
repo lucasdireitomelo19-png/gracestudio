@@ -149,7 +149,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
          "-map", "[vo]" if ending else "[v]", "-map", "[ao]" if ending else "[a]",
          *([] if ending else ["-t", f"{total:.3f}"]),
          "-c:v", "libx264", "-preset", "medium", "-b:v", BITRATE, "-minrate", BITRATE,
-         "-maxrate", BITRATE, "-bufsize", "100M", "-profile:v", "high", "-r", str(FPS),
+         "-maxrate", BITRATE, "-bufsize", BITRATE, "-x264-params", "nal-hrd=cbr:force-cfr=1",
+         "-profile:v", "high", "-r", str(FPS),
          "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", out])
     print("OK", out, f"{total:.2f}s")
     return out
