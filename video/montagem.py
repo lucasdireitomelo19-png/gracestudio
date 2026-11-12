@@ -40,7 +40,10 @@ def ts(x):
     return f"{int(x // 3600)}:{int(x % 3600 // 60):02d}:{x % 60:05.2f}"
 
 
-def render(RAW, A, SUBS, B, OUT, tmp_name, music=None, music_vol=None, music_start=0.45):
+def render(RAW, A, SUBS, B, OUT, tmp_name, music=None, music_vol=None, music_start=0.45,
+           font="Soho Gothic Pro", bold=1, font_scale=1.0, ending=None):
+    """ending: vídeo de encerramento da marca, emendado no fim (sem legenda/template)."""
+    fsize = round(FONT_SIZE * font_scale)
     music = music or MUSIC
     music_vol = MUSIC_VOL if music_vol is None else music_vol
     def src(f):  # "pasta/arquivo" = relativo a work/; senão, da pasta RAW
@@ -111,8 +114,8 @@ WrapStyle: 2
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Txt,Soho Gothic Pro,{FONT_SIZE},&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,1,0,0,0,100,100,0,0,1,0,0,5,{round(60*K)},{round(60*K)},0,1
-Style: Shd,Soho Gothic Pro,{FONT_SIZE},&H29000000,&H29000000,&H29000000,&H00000000,1,0,0,0,100,100,0,0,1,0,0,5,{round(60*K)},{round(60*K)},0,1
+Style: Txt,{font},{fsize},&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,{bold},0,0,0,100,100,0,0,1,0,0,5,{round(60*K)},{round(60*K)},0,1
+Style: Shd,{font},{fsize},&H29000000,&H29000000,&H29000000,&H00000000,{bold},0,0,0,100,100,0,0,1,0,0,5,{round(60*K)},{round(60*K)},0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -138,8 +141,13 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
          f"[0:v]{GRADE},subtitles={tmp}/subs.ass:fontsdir={ASSETS}[g];"
          f"[2:v]scale={W}:{H},format=rgba[t];[g][t]overlay=0:0:shortest=1,format=yuv420p[v];"
          f"[3:a]atrim=start={music_start},asetpts=PTS-STARTPTS,aresample=48000,volume={music_vol},"
-         f"afade=t=out:st={total-1.5:.3f}:d=1.5[m];[1:a][m]amix=inputs=2:duration=first:normalize=0[a]",
-         "-map", "[v]", "-map", "[a]", "-t", f"{total:.3f}",
+         f"afade=t=out:st={total-1.5:.3f}:d=1.5[m];[1:a][m]amix=inputs=2:duration=first:normalize=0[a]"
+         + (f";[v]trim=duration={total:.3f},setpts=PTS-STARTPTS[vm];[a]atrim=duration={total:.3f},asetpts=PTS-STARTPTS[am];"
+            f"[4:v]scale={W}:{H},fps={FPS},format=yuv420p,setsar=1[ve];[4:a]aresample=48000,aformat=channel_layouts=stereo[ae];"
+            f"[vm][am][ve][ae]concat=n=2:v=1:a=1[vo][ao]" if ending else ""),
+         *(["-i", ending] if ending else []),
+         "-map", "[vo]" if ending else "[v]", "-map", "[ao]" if ending else "[a]",
+         *([] if ending else ["-t", f"{total:.3f}"]),
          "-c:v", "libx264", "-preset", "medium", "-b:v", BITRATE, "-minrate", BITRATE,
          "-maxrate", BITRATE, "-bufsize", "100M", "-profile:v", "high", "-r", str(FPS),
          "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", out])
