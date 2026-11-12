@@ -10,7 +10,9 @@ Cada vídeo é um arquivo de configuração (ver harley_*.py) com:
 """
 import os, subprocess
 
-W, H, FPS = 1080, 1920, 30
+W, H, FPS = 1440, 2560, 60   # 2K vertical, 60 fps
+BITRATE = "50M"              # taxa de bits final
+K = W / 1080                  # escala da legenda em relação ao layout original 1080p
 REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 WORK = f"{REPO}/work"
 ASSETS = f"{REPO}/assets/iesa"
@@ -21,8 +23,8 @@ GRADE = ("eq=contrast=1.06:saturation=1.12:gamma=0.98,"
          "unsharp=5:5:0.45")
 
 # Legenda: IESA Bold (Soho Gothic Pro), branca, sombra preta 16% desfocada
-FONT_SIZE = 66
-LINE_GAP = 53       # distância entre linhas
+FONT_SIZE = round(66 * K)
+LINE_GAP = round(53 * K)   # distância entre linhas
 SUB_Y = 0.72        # altura da legenda (fração da tela)
 
 # Trilha: "Big Rock" - Kevin MacLeod (incompetech.com), licença CC BY 4.0
@@ -79,7 +81,7 @@ def render(RAW, A, SUBS, B, OUT, tmp_name, music=None, music_vol=None, music_sta
               f"fps={FPS},format=yuv420p")
         run(["ffmpeg", "-v", "error", "-y", "-ss", f"{s:.3f}", "-i", src(f),
              "-t", f"{d:.3f}", "-an", "-vf", vf, "-c:v", "libx264", "-preset", "fast",
-             "-crf", "16", out])
+             "-crf", "12", out])
         parts.append(out)
     with open(f"{tmp}/vlist.txt", "w") as fh:
         fh.writelines(f"file '{p}'\n" for p in parts)
@@ -109,8 +111,8 @@ WrapStyle: 2
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Txt,Soho Gothic Pro,{FONT_SIZE},&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,1,0,0,0,100,100,0,0,1,0,0,5,60,60,0,1
-Style: Shd,Soho Gothic Pro,{FONT_SIZE},&H29000000,&H29000000,&H29000000,&H00000000,1,0,0,0,100,100,0,0,1,0,0,5,60,60,0,1
+Style: Txt,Soho Gothic Pro,{FONT_SIZE},&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,1,0,0,0,100,100,0,0,1,0,0,5,{round(60*K)},{round(60*K)},0,1
+Style: Shd,Soho Gothic Pro,{FONT_SIZE},&H29000000,&H29000000,&H29000000,&H00000000,1,0,0,0,100,100,0,0,1,0,0,5,{round(60*K)},{round(60*K)},0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -122,7 +124,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         lines = text.split("\n")
         for j, line in enumerate(lines):
             y = round(Y + (j - (len(lines) - 1) / 2) * LINE_GAP)
-            ass += f"Dialogue: 0,{ts(st)},{ts(en)},Shd,,0,0,0,,{{\\pos({W//2+3},{y+4})\\blur14}}{line}\n"
+            ass += f"Dialogue: 0,{ts(st)},{ts(en)},Shd,,0,0,0,,{{\\pos({W//2+round(3*K)},{y+round(4*K)})\\blur{round(14*K)}}}{line}\n"
             ass += f"Dialogue: 1,{ts(st)},{ts(en)},Txt,,0,0,0,,{{\\pos({W//2},{y})}}{line}\n"
     with open(f"{tmp}/subs.ass", "w") as fh:
         fh.write(ass)
@@ -138,7 +140,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
          f"[3:a]atrim=start={music_start},asetpts=PTS-STARTPTS,aresample=48000,volume={music_vol},"
          f"afade=t=out:st={total-1.5:.3f}:d=1.5[m];[1:a][m]amix=inputs=2:duration=first:normalize=0[a]",
          "-map", "[v]", "-map", "[a]", "-t", f"{total:.3f}",
-         "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-profile:v", "high",
+         "-c:v", "libx264", "-preset", "medium", "-b:v", BITRATE, "-minrate", BITRATE,
+         "-maxrate", BITRATE, "-bufsize", "100M", "-profile:v", "high", "-r", str(FPS),
          "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", out])
     print("OK", out, f"{total:.2f}s")
     return out
