@@ -117,7 +117,7 @@ def ts(x):
     return f"{h}:{m:02d}:{sec:05.2f}"
 
 FONT_SIZE = 66
-LINE_GAP = 60  # distância entre linhas (antes ~80)
+LINE_GAP = 53  # distância entre linhas (v1 ~80, v2 60)
 ass = f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: {W}
@@ -145,7 +145,7 @@ with open(f"{TMP}/subs.ass", "w") as fh:
     fh.write(ass)
 
 # Final: cor + legendas + template Ibama
-out = f"{ROOT}/out/harley_black_november_v2.mp4"
+out = f"{ROOT}/out/harley_black_november_v3.mp4"
 os.makedirs(os.path.dirname(out), exist_ok=True)
 run(["ffmpeg", "-v", "error", "-y", "-i", f"{TMP}/video.mp4", "-i", f"{TMP}/voice.wav",
      "-loop", "1", "-i", f"{ASSETS}/template_ibama.png",
