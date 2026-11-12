@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Deep house / techno tranquilo — trilha original gerada por código (sem direitos de terceiros).
 
-Uso: python3 trilha_house.py saida.wav [segundos] [bpm]
+Uso: python3 trilha_house.py saida.wav [segundos] [bpm]  (Volvo: 112 bpm)
 Estrutura: bumbo 4/4, palma no 2 e 4, chimbal aberto no contratempo, shaker em 16ª,
 baixo no contratempo, acordes com 7ª/9ª com sidechain ("pump") e filtro abrindo aos poucos.
 """
