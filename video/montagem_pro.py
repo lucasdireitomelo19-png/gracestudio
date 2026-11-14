@@ -115,7 +115,9 @@ def posicao_texto(cab, bloco, pos):
 
 # ---------- montagem ----------
 def render_pro(RAW, TIMELINE, CARDS, TITLES, OUT, tmp_name, music, font="Soho Gothic Pro",
-               font_bold="Soho Gothic Pro", drop_item=None, ending=None, music_lufs=-21.0):
+               font_bold="Soho Gothic Pro", drop_item=None, ending=None, music_lufs=-21.0,
+               cor=True, reaproveitar=False):
+    """cor=False: mantém a cor original do bruto. reaproveitar=True: reusa planos já cortados."""
     tmp = f"{WORK}/tmp_{tmp_name}"
     os.makedirs(tmp, exist_ok=True)
     src = lambda f: f"{RAW}/{f}.MOV"
@@ -150,6 +152,9 @@ def render_pro(RAW, TIMELINE, CARDS, TITLES, OUT, tmp_name, music, font="Soho Go
         push = PUSH * (1.6 if it["kind"] == "insert" else 1.0)
         vf = (f"{pre}scale=w='{W}*{z}*(1+{push}*t/{it['d']:.3f})':h=-2:eval=frame,"
               f"crop={W}:{H},fps={FPS},format=yuv420p")
+        if reaproveitar and os.path.exists(out) and os.path.getsize(out) > 0:
+            parts.append(out)
+            continue
         run(["ffmpeg", "-v", "error", "-y", "-ss", f"{it['s']:.3f}", "-i", src(it["f"]),
              "-t", f"{it['d']:.3f}", "-an", "-vf", vf, "-c:v", "libx264", "-preset", "fast",
              "-crf", "12", out])
@@ -296,7 +301,7 @@ def render_pro(RAW, TIMELINE, CARDS, TITLES, OUT, tmp_name, music, font="Soho Go
               "-i", f"{tmp}/sfx.wav", "-loop", "1", "-i", f"{ASSETS}/template_ibama.png"]
     if ending:
         inputs += ["-i", ending]                        # 5
-    fc = f"[0:v]{GRADE},format=gbrp[g0];"
+    fc = (f"[0:v]{GRADE},format=gbrp[g0];" if cor else "[0:v]format=gbrp[g0];")
     fc += f"color=black:s={W}x{H}:r={FPS}:d={total:.3f},format=gbrp[fl0];"
     for k, tc in enumerate(flares):
         idx = 5 + (1 if ending else 0) + k

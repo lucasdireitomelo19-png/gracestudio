@@ -67,4 +67,6 @@ TITLES = [
 if __name__ == "__main__":
     render_pro(RAW, TIMELINE, CARDS, TITLES, "byd_aon_2k60.mp4", "byd",
                music=f"{WORK}/music/trilha_byd.wav", drop_item=2,
-               ending=f"{ASSETS}/encerramento_grupo_iesa.mp4")
+               ending=f"{ASSETS}/encerramento_grupo_iesa.mp4",
+               cor=False,                    # sem correção de cor: mantém o bruto
+               reaproveitar=True)
