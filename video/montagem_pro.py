@@ -178,7 +178,7 @@ def render_pro(RAW, TIMELINE, CARDS, TITLES, OUT, tmp_name, music, font="Soho Go
     for ti in TITLES:
         it = items[ti["item"]]
         for j in range(len(ti["texto"])):
-            sfx_ev.append((it["t0"] + ti["t"] + 0.12 + j * 0.07, "tick.wav", -22))
+            sfx_ev.append((it["t0"] + ti["t"] + 0.10 + j * 0.045, "tick.wav", -22))
     sfx_bus = np.zeros_like(voice)
     cache = {}
     for tt, f, g in sfx_ev:
@@ -253,15 +253,16 @@ def render_pro(RAW, TIMELINE, CARDS, TITLES, OUT, tmp_name, music, font="Soho Go
         t0 = it["t0"] + ti["t"]
         t1 = it["t0"] + it["d"]
         txt = ti["texto"]
-        letters = "".join(f"{{\\alpha&HFF&\\t({120+j*70},{170+j*70},\\alpha&H00&)}}{ch}"
+        letters = "".join(f"{{\\alpha&HFF&\\t({100+j*45},{150+j*45},\\alpha&H00&)}}{ch}"
                           for j, ch in enumerate(txt))
+        fit = min(100, int(100 * 0.86 * W / (len(txt) * 0.66 * ttl)))   # cabe na largura
         y = round(ti.get("y", 0.16) * H)
-        tags = "\\an8\\fscx105\\fscy105\\t(0,800,\\fscx100\\fscy100)"
+        tags = f"\\an8\\fscx{fit+5}\\fscy{fit+5}\\t(0,800,\\fscx{fit}\\fscy{fit})"
         ass += ass_line(t0, t1, "Ttl", tags, letters, x=W // 2, y=y, layer=3)
         if ti.get("sub"):
-            ts_ = 0.12 + len(txt) * 0.07 + 0.1
+            ts_ = 0.10 + len(txt) * 0.045 + 0.1
             ass += ass_line(t0, t1, "Sub", f"\\an8\\alpha&HFF&\\t({int(ts_*1000)},{int(ts_*1000)+200},\\alpha&H00&)",
-                            ti["sub"], x=W // 2, y=y + round(ttl * 1.02), layer=3)
+                            ti["sub"], x=W // 2, y=y + round(ttl * 1.02 * fit / 100), layer=3)
     with open(f"{tmp}/text.ass", "w") as fh:
         fh.write(ass)
 

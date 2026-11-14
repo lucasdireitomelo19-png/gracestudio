@@ -9,17 +9,17 @@ RAW = f"{WORK}/byd/raw"
 TIMELINE = [
     ("fala", "C745", 1.55, 4.55, 1.00),             # 0  Sabe o que mais de 100 mil brasileiros têm em comum?
     ("fala", "C745", 4.95, 6.45, 1.18),             # 1  Todos escolheram a BYD!   (punch-in)
-    ("insert", "C755", 0.30, 1.10, (0.12, 0.03, 0.42)),   # 2  logo BYD na parede  → DROP
+    ("insert", "C755", 0.30, 1.20, (0.12, 0.03, 0.42)),   # 2  logo BYD na parede  → DROP
     ("fala", "C749", 1.90, 3.78, 1.00),             # 3  E não é por acaso!
     ("fala", "C749", 3.80, 8.40, 1.15),             # 4  Com a BYD IESA… estilo de vida.
     ("fala", "C751", 5.60, 8.20, 1.00),             # 5  100% elétrico para aproveitar a cidade.
-    ("insert", "C751", 8.70, 0.90, (0.00, 0.30, 0.48)),   # 6  Dolphin Mini, frente
+    ("insert", "C751", 8.55, 1.10, (0.00, 0.30, 0.48)),   # 6  Dolphin Mini, frente
     ("fala", "C752", 1.85, 3.58, 1.00),             # 7  Ou híbrido para ir
     ("fala", "C752", 4.08, 5.90, 1.15),             # 8  mais longe na estrada.
-    ("insert", "C752", 10.40, 0.90, (0.00, 0.24, 0.50)),  # 9  Song Premium, frente
+    ("insert", "C752", 10.40, 1.15, (0.00, 0.24, 0.50)),  # 9  Song Premium, frente
     ("fala", "C753", 2.85, 7.30, 1.00),             # 10 Já imaginou rodar muito mais, gastando 3 vezes menos?
     ("fala", "C754", 1.00, 5.75, 1.00),             # 11 É uma nova forma de dirigir…
-    ("insert", "C744", 0.20, 0.90, (0.45, 0.45, 0.55)),   # 12 Seal, frente
+    ("insert", "C744", 0.20, 1.20, (0.45, 0.45, 0.55)),   # 12 Seal, frente
     ("fala", "C755", 9.30, 13.80, 1.00),            # 13 Escolha seu novo BYD na IESA…
     ("fala", "C756", 7.75, 12.60, 1.15),            # 14 Visite a BYD IESA… Rio Grande do Sul.
 ]
