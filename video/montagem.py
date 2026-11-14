@@ -40,8 +40,8 @@ FADE = 0.4                            # esmaecimento preto antes do encerramento
 
 
 def flares_locucao(cortes_entrada, cortes_saida):
-    """Lista de flares: flash branco ao entrar na locução, dourado ao voltar para a pessoa."""
-    return ([(t, f"{ASSETS}/flare1.mov") for t in cortes_entrada] +
+    """Lista de flares: flash dourado ao entrar na locução e ao voltar para a pessoa (como a referência)."""
+    return ([(t, f"{ASSETS}/flare2.mov") for t in cortes_entrada] +
             [(t, f"{ASSETS}/flare2.mov") for t in cortes_saida])
 
 
