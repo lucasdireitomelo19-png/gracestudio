@@ -12,6 +12,7 @@ Cartelas (TITLES): {"item": i, "t": seg_no_item, "texto": "BYD", "sub": "…"}  
 import os, subprocess, wave
 import numpy as np
 from scipy.signal import butter, sosfilt
+from rosto import cabeca
 from montagem import (W, H, FPS, BITRATE, K, GRADE, WORK, ASSETS, ajustar_corte, run,
                       FLARE_PEAK, FLARE_IN, FLARE_OUT, TAIL)
 
@@ -51,7 +52,7 @@ def ts(x):
 
 
 def ass_header(font, font_bold):
-    reg, big, title = round(58 * K), round(112 * K), round(240 * K)
+    reg, big, title = round(58 * K), round(120 * K), round(240 * K)
     return f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: {W}
@@ -61,8 +62,8 @@ WrapStyle: 2
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Style: Reg,{font},{reg},&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,0,0,0,1
-Style: Big,{font_bold},{big},&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,1,1,0,0,100,100,0,0,1,0,0,7,0,0,0,1
-Style: Ttl,{font_bold},{title},&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,1,1,0,0,100,100,4,0,1,0,0,8,0,0,0,1
+Style: Big,{font},{big},&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,0,0,0,1
+Style: Ttl,{font},{title},&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,0,0,0,0,100,100,4,0,1,0,0,8,0,0,0,1
 Style: Sub,{font},{round(64 * K)},&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,0,0,0,0,100,100,2,0,1,0,0,8,0,0,0,1
 
 [Events]
@@ -90,6 +91,26 @@ def reveal(words, t0):
         a = max(0, int((tw - t0) * 1000))
         s += f"{{\\alpha&HFF&\\t({a},{a+110},\\alpha&H00&)}}{w} "
     return s.strip()
+
+
+def posicao_texto(cab, bloco, pos):
+    """Topo do bloco de texto (px), acima ou abaixo da cabeça, sem invadir o rodapé do Ibama."""
+    topo_min, base_max, folga = round(0.05 * H), round(0.86 * H), round(0.025 * H)
+    padrao = round(0.13 * H) if pos == "tl" else round(0.60 * H)
+    if cab is None:
+        return padrao
+    hy0, hy1 = round(cab[1] * H), round(cab[3] * H)
+    cabe_acima = hy0 - folga - topo_min >= bloco
+    abaixo = hy1 + folga
+    cabe_abaixo = base_max - abaixo >= bloco
+    if pos == "tl" and cabe_acima:
+        return topo_min
+    if cabe_abaixo:
+        return max(abaixo, padrao) if padrao + bloco <= base_max else abaixo
+    if cabe_acima:
+        return topo_min
+    # nenhum lado comporta tudo: usa o lado com mais espaço
+    return topo_min if (hy0 - topo_min) > (base_max - abaixo) else abaixo
 
 
 # ---------- montagem ----------
@@ -217,6 +238,9 @@ def render_pro(RAW, TIMELINE, CARDS, TITLES, OUT, tmp_name, music, font="Soho Go
 
     # 6) textos animados + cartelas
     hdr, reg, big, ttl = ass_header(font, font_bold)
+    # onde está a cabeça da pessoa em cada plano de fala (a legenda nunca cobre o rosto)
+    cabecas = {k: cabeca(src(it["f"]), it["s"], it["e"], it["z"])
+               for k, it in enumerate(items) if it["kind"] == "fala"}
     ass = hdr
     shadow_x = 0
     for ci, c in enumerate(CARDS):
@@ -229,12 +253,13 @@ def render_pro(RAW, TIMELINE, CARDS, TITLES, OUT, tmp_name, music, font="Soho Go
             nxt = [conv2 for conv2 in []]
             en = it["t0"] + it["d"]
         en = min(en, total)
+        # altura do bloco de texto
+        bloco = sum(round(big * 1.02) if any(e for _, _, e in ln) else round(reg * 1.18) for ln in c["lines"])
         if c["pos"] == "tl":
-            x, y = round(0.07 * W), round(0.13 * H)
-            an = "\\an7"
+            x, an = round(0.07 * W), "\\an7"
         else:
-            x, y = W // 2, round(0.60 * H)
-            an = "\\an8"
+            x, an = W // 2, "\\an8"
+        y = posicao_texto(cabecas.get(c["item"]), bloco, c["pos"])
         for line in c["lines"]:
             words = [(w, conv(tw)) for w, tw, _ in line]
             emph = any(e for _, _, e in line)
