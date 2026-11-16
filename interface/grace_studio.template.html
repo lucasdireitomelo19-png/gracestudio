@@ -1,0 +1,541 @@
+<title>Grace Studio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: mesa de edição. Coluna larga = ficha do pedido em blocos; coluna estreita = fila de pedidos. */
+:root{
+  --bg:#EEF0F4; --painel:#FFFFFF; --linha:#D9DDE6; --tinta:#151922; --tinta2:#566074;
+  --acento:#2B4BDB; --acento-suave:#E3E8FB; --ok:#1F8A5B; --ok-suave:#DDF2E8; --aviso:#B26A00; --aviso-suave:#FBEBD2; --vivo:#C2382F; --vivo-suave:#F8E0DE;
+  --f-titulo:"Bricolage Grotesque","Inter",system-ui,sans-serif; --f-texto:"Inter",system-ui,sans-serif; --f-mono:"JetBrains Mono",ui-monospace,monospace;
+  --raio:10px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#101318; --painel:#181C23; --linha:#2A303B; --tinta:#E8EBF1; --tinta2:#9AA3B5;
+  --acento:#8EA2FF; --acento-suave:#222B4D; --ok:#5CCB98; --ok-suave:#173327; --aviso:#F0B35A; --aviso-suave:#3A2C16; --vivo:#F07D74; --vivo-suave:#3D1F1D; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101318; --painel:#181C23; --linha:#2A303B; --tinta:#E8EBF1; --tinta2:#9AA3B5;
+  --acento:#8EA2FF; --acento-suave:#222B4D; --ok:#5CCB98; --ok-suave:#173327; --aviso:#F0B35A; --aviso-suave:#3A2C16; --vivo:#F07D74; --vivo-suave:#3D1F1D; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--tinta);font-family:var(--f-texto);font-size:14px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.topo{max-width:1280px;margin:0 auto 18px;display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px}
+.marca-app{font-family:var(--f-titulo);font-weight:700;font-size:28px;letter-spacing:-.02em;margin:0;text-wrap:balance}
+.marca-app span{color:var(--acento)}
+.sub{color:var(--tinta2);margin:2px 0 0}
+.spec{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-family:var(--f-mono);font-size:12px;padding:3px 8px;border:1px solid var(--linha);border-radius:999px;color:var(--tinta2);background:var(--painel);white-space:nowrap}
+.grade{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;align-items:start}
+@media (max-width:960px){.grade{grid-template-columns:minmax(0,1fr)}}
+.ficha{display:flex;flex-direction:column;gap:14px;min-width:0}
+.bloco{background:var(--painel);border:1px solid var(--linha);border-radius:var(--raio);padding:18px;min-width:0}
+.bloco h2{font-family:var(--f-titulo);font-weight:700;font-size:17px;margin:0 0 4px;text-wrap:balance}
+.bloco .ajuda{color:var(--tinta2);margin:0 0 12px;font-size:13px}
+label.rot{display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tinta2);margin:0 0 5px}
+input[type=text],input[type=url],input[type=number],select,textarea{width:100%;font:inherit;color:var(--tinta);background:var(--bg);border:1px solid var(--linha);border-radius:8px;padding:9px 11px}
+textarea{min-height:150px;resize:vertical;line-height:1.55}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,.opc:focus-visible{outline:2px solid var(--acento);outline-offset:2px}
+.linha2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.marcas{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.opc{cursor:pointer;border:1px solid var(--linha);border-radius:8px;padding:10px;background:var(--bg);text-align:left;font:inherit;color:inherit;display:flex;flex-direction:column;gap:2px}
+.opc[aria-pressed="true"]{border-color:var(--acento);background:var(--acento-suave);box-shadow:inset 0 0 0 1px var(--acento)}
+.opc b{font-weight:600}
+.opc small{color:var(--tinta2);font-size:12px}
+.pinta{width:14px;height:14px;border-radius:50%;display:inline-block;vertical-align:-2px;margin-right:6px;border:1px solid var(--linha)}
+.regras{margin:12px 0 0;padding:10px 12px;border-radius:8px;background:var(--aviso-suave);color:var(--tinta);font-size:13px}
+.regras b{color:var(--aviso)}
+/* estilos de texto */
+.estilos-wrap{display:grid;grid-template-columns:200px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:620px){.estilos-wrap{grid-template-columns:minmax(0,1fr)}}
+.tela{position:relative;width:200px;max-width:100%;aspect-ratio:9/16;border-radius:14px;overflow:hidden;background:#222 center/cover no-repeat;box-shadow:0 0 0 1px var(--linha);margin:0 auto}
+.tela .ibama{position:absolute;right:6%;bottom:3%;font:600 7px/1 var(--f-texto);color:#fff;opacity:.85;letter-spacing:.04em}
+.tela .leg{position:absolute;left:8%;top:9%;right:8%;color:#fff;font-size:15px;line-height:1.22;text-shadow:0 2px 6px rgba(0,0,0,.55)}
+.tela .centro{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:8%}
+.lista-estilos{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.w{display:inline-block;margin-right:.26em}
+.st-referencia .w,.st-subindo .w,.st-maquina .w{opacity:1}
+.anim .st-referencia .w{opacity:0;transition:opacity .22s}
+.anim .st-referencia .w.on{opacity:1}
+.anim .st-subindo .w{opacity:0;transform:translateY(35%) scaleY(.6);transition:opacity .18s,transform .18s}
+.anim .st-subindo .w.on{opacity:1;transform:none}
+.st-karaoke .w{transition:color .08s,transform .08s}
+.st-karaoke .w.cur{color:var(--cm);transform:scale(1.08)}
+.anim .st-maquina .l{opacity:0}.anim .st-maquina .l.on{opacity:1}
+.st-marcador .w.dest{background:linear-gradient(var(--cm),var(--cm)) no-repeat 0 70%/100% 85%;padding:0 .12em}
+.anim .st-marcador .w.dest{background-size:0% 85%;transition:background-size .26s}
+.anim .st-marcador .w.dest.on{background-size:100% 85%}
+.st-caixa .ln{display:inline-block;background:var(--cm);padding:.08em .3em;margin-bottom:.25em;font-weight:700;text-shadow:none}
+.anim .st-caixa .ln{opacity:0;transform:translateX(-14%);transition:opacity .18s,transform .22s}
+.anim .st-caixa .ln.on{opacity:1;transform:none}
+.st-neon{font-weight:700;text-shadow:0 0 6px var(--cm),0 0 14px var(--cm)!important}
+.anim .st-neon{animation:pulso 1.2s ease-in-out infinite alternate}
+@keyframes pulso{to{text-shadow:0 0 3px var(--cm),0 0 6px var(--cm)}}
+.st-minimal{font-size:11.5px!important}
+.anim .st-minimal .ln{opacity:0;transition:opacity .25s}.anim .st-minimal .ln.on{opacity:1}
+.hz{font-weight:800;text-transform:uppercase;font-size:21px;line-height:1.1;-webkit-text-stroke:1.4px #000;paint-order:stroke fill;text-shadow:0 3px 0 rgba(0,0,0,.4)}
+.hz .c{color:var(--cm)}
+.anim .hz{animation:pop .2s ease-out}
+@keyframes pop{0%{transform:scale(.7)}60%{transform:scale(1.08)}100%{transform:scale(1)}}
+.imp{font-weight:900;text-transform:uppercase;font-size:34px;line-height:1;color:#fff}
+.anim .imp{animation:imp .35s ease-out}
+@keyframes imp{0%{transform:scale(1.4) translate(0,0);opacity:.7}30%{transform:scale(1.05) translate(-2px,1px)}50%{transform:scale(1) translate(2px,-1px)}70%{transform:translate(-1px,1px)}100%{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.anim *{animation:none!important;transition:none!important}}
+/* LUTs */
+.lut-topo{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.abas{display:flex;flex-wrap:wrap;gap:6px}
+.aba{font:inherit;font-size:13px;padding:5px 11px;border-radius:999px;border:1px solid var(--linha);background:var(--bg);color:var(--tinta2);cursor:pointer}
+.aba[aria-pressed="true"]{background:var(--tinta);color:var(--painel);border-color:var(--tinta)}
+.luts{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.lut{cursor:pointer;border:1px solid var(--linha);border-radius:8px;padding:4px;background:var(--bg);font:inherit;color:inherit;text-align:left}
+.lut img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:5px}
+.lut span{display:block;font-size:11px;line-height:1.25;padding:4px 2px 1px;overflow-wrap:anywhere}
+.lut[aria-pressed="true"]{border-color:var(--acento);box-shadow:inset 0 0 0 2px var(--acento)}
+.deslizador{display:flex;align-items:center;gap:10px}
+.deslizador input{flex:1;accent-color:var(--acento)}
+.deslizador output{font-family:var(--f-mono);font-size:12px;min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
+/* filtros e widgets */
+.itens{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;padding:10px;border:1px solid var(--linha);border-radius:8px;background:var(--bg)}
+.item .campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;grid-column:1/-1}
+.item .nome{font-weight:600}
+.item .desc{color:var(--tinta2);font-size:12px}
+.btn{font:inherit;font-weight:600;cursor:pointer;border-radius:8px;padding:9px 14px;border:1px solid var(--linha);background:var(--painel);color:var(--tinta)}
+.btn.prim{background:var(--acento);border-color:var(--acento);color:var(--painel)}
+.btn.min{padding:4px 9px;font-size:12px;font-weight:500}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.add{display:flex;gap:8px;flex-wrap:wrap}
+.add select{flex:1;min-width:180px}
+.acoes{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.aviso-txt{font-size:13px;color:var(--tinta2)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--tinta);color:var(--painel);padding:10px 16px;border-radius:8px;font-weight:500;z-index:20;max-width:calc(100% - 32px)}
+/* fila */
+.fila{position:sticky;top:calc(12px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:10px;min-width:0}
+@media (max-width:960px){.fila{position:static}}
+.fila h2{font-family:var(--f-titulo);font-size:17px;margin:0}
+.ped{border:1px solid var(--linha);border-radius:8px;padding:10px 12px;background:var(--bg);display:flex;flex-direction:column;gap:4px}
+.ped .cab{display:flex;justify-content:space-between;gap:8px;align-items:start}
+.ped .t{font-weight:600;overflow-wrap:anywhere}
+.ped .meta{font-size:12px;color:var(--tinta2);font-family:var(--f-mono)}
+.pill{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap;text-transform:uppercase;letter-spacing:.05em}
+.s-fila{background:var(--acento-suave);color:var(--acento)}
+.s-editando{background:var(--aviso-suave);color:var(--aviso)}
+.s-pronto{background:var(--ok-suave);color:var(--ok)}
+.s-ajustes{background:var(--vivo-suave);color:var(--vivo)}
+details.ped summary{cursor:pointer;list-style:none}
+details.ped summary::-webkit-details-marker{display:none}
+.det{margin-top:8px;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.det dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;margin:0}
+.det dt{color:var(--tinta2)}
+.det dd{margin:0;overflow-wrap:anywhere}
+.det textarea{min-height:70px}
+.vazio{color:var(--tinta2);font-size:13px;border:1px dashed var(--linha);border-radius:8px;padding:14px}
+a{color:var(--acento)}
+.radios{display:flex;flex-direction:column;gap:8px}
+.radios label{display:flex;gap:8px;align-items:start;cursor:pointer}
+.radios input{accent-color:var(--acento);margin-top:3px}
+</style>
+
+<header class="topo">
+  <div>
+    <h1 class="marca-app">Grace <span>Studio</span></h1>
+    <p class="sub">Monte o pedido do vídeo. O Claude edita no motor do Grace Studio e devolve o arquivo final.</p>
+  </div>
+  <div class="spec" aria-label="Padrão de entrega">
+    <span class="chip">1440×2560 (2K vertical)</span><span class="chip">60 fps</span><span class="chip">50 Mbps CBR</span><span class="chip">selo Ibama</span>
+  </div>
+</header>
+
+<main class="grade">
+  <form class="ficha" id="ficha" novalidate>
+    <section class="bloco">
+      <h2>Vídeo</h2>
+      <p class="ajuda">Nome do vídeo e a pasta do Drive com os brutos (vídeos, locução e roteiro, se tiver).</p>
+      <div class="linha2">
+        <div><label class="rot" for="nome">Nome do vídeo</label><input type="text" id="nome" placeholder="Ex.: BYD Dolphin Mini – oferta"></div>
+        <div><label class="rot" for="drive">Pasta no Google Drive</label><input type="url" id="drive" placeholder="https://drive.google.com/drive/folders/…"></div>
+      </div>
+    </section>
+
+    <section class="bloco">
+      <h2>Marca</h2>
+      <p class="ajuda">A marca define fonte, cor, encerramento e o clima da trilha. Dá para trocar cada item depois.</p>
+      <div class="marcas" id="marcas"></div>
+      <div class="regras" id="regras"></div>
+    </section>
+
+    <section class="bloco">
+      <h2>Roteiro</h2>
+      <p class="ajuda">Cole o roteiro. Marque as palavras de destaque com asteriscos: <code>*BYD Dolphin Mini*</code> sai em negrito. Escreva <code>[locução]</code> antes dos trechos narrados (pessoa lendo o celular) para entrar B-roll por cima.</p>
+      <label class="rot" for="roteiro">Texto falado</label>
+      <textarea id="roteiro"></textarea>
+    </section>
+
+    <section class="bloco">
+      <h2>Legenda</h2>
+      <p class="ajuda">Escolha o estilo. A prévia mostra a animação com a fonte e a cor da marca.</p>
+      <div class="estilos-wrap">
+        <div>
+          <div class="tela" id="tela"><div id="prev"></div><span class="ibama">IBAMA</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+          <div class="lista-estilos" id="estilos"></div>
+          <div class="linha2">
+            <div><label class="rot" for="fonte">Fonte</label><select id="fonte"></select></div>
+          </div>
+          <p class="aviso-txt" id="aviso-fonte"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="bloco">
+      <h2>Cor (LUT)</h2>
+      <p class="ajuda">Miniaturas aplicadas num quadro real do BYD Song. “Cor original” deixa o vídeo como foi gravado.</p>
+      <div class="lut-topo">
+        <div class="abas" id="abas-lut"></div>
+        <div class="deslizador" style="min-width:220px;flex:1;max-width:320px">
+          <label class="rot" for="lut-int" style="margin:0">Força</label>
+          <input type="range" id="lut-int" min="5" max="100" step="5" value="40"><output id="lut-int-v">40%</output>
+        </div>
+      </div>
+      <div class="luts" id="luts"></div>
+    </section>
+
+    <section class="bloco">
+      <h2>Filtros</h2>
+      <p class="ajuda">Ajustes por cima da cor. Cada um tem a sua força.</p>
+      <div class="add"><select id="filtro-add" aria-label="Escolher filtro"></select><button type="button" class="btn" id="filtro-btn">Adicionar filtro</button></div>
+      <div class="itens" id="filtros"></div>
+    </section>
+
+    <section class="bloco">
+      <h2>Widgets</h2>
+      <p class="ajuda">Elementos animados nas cores da marca. Diga em que fala ou segundo cada um entra.</p>
+      <div class="add"><select id="widget-add" aria-label="Escolher widget"></select><button type="button" class="btn" id="widget-btn">Adicionar widget</button></div>
+      <div class="itens" id="widgets"></div>
+    </section>
+
+    <section class="bloco">
+      <h2>Trilha</h2>
+      <p class="ajuda">Toda peça leva uma trilha sem direitos autorais. O padrão é compor uma nova no clima da marca.</p>
+      <div class="radios">
+        <label><input type="radio" name="trilha" value="nova" id="trilha-nova" checked><span>Trilha nova no clima da marca</span></label>
+        <input type="text" id="trilha-desc" placeholder="Clima: ex. house tranquilo, 100 bpm, elegante">
+        <label><input type="radio" name="trilha" value="existente" id="trilha-exist"><span>Reusar uma trilha já feita</span></label>
+        <select id="trilha-sel" aria-label="Trilha existente"></select>
+      </div>
+    </section>
+
+    <section class="bloco">
+      <h2>Observações</h2>
+      <label class="rot" for="obs">Qualquer detalhe a mais</label>
+      <textarea id="obs" style="min-height:80px" placeholder="Ex.: usar o take 2 da abertura; terminar no sorriso."></textarea>
+    </section>
+
+    <section class="bloco">
+      <div class="acoes">
+        <button type="submit" class="btn prim" id="enviar">Enviar pedido</button>
+        <button type="button" class="btn" id="copiar">Copiar pedido</button>
+        <span class="aviso-txt" id="estado-envio">Conectando à fila…</span>
+      </div>
+    </section>
+  </form>
+
+  <aside class="bloco fila" aria-labelledby="fila-tit">
+    <h2 id="fila-tit">Fila de pedidos</h2>
+    <div id="fila"><p class="vazio">Carregando pedidos…</p></div>
+  </aside>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const D = __DADOS__;
+const OBS_MARCA = {
+  iesa:"Encerramento Grupo IESA com fade preto.",
+  bmw:"Fonte IESA fina. Encerramento BMW só para carros, com fade preto.",
+  bmw_motorrad:"Fonte IESA fina. Sem encerramento (o da BMW é só para carros).",
+  mini:"Fonte IESA fina. MINI não tem encerramento.",
+  volvo:"Fonte Volvo Centum e encerramento Volvo, com fade preto.",
+  byd:"Sem cor (nada de LUT). Fonte fina. Encerramento Grupo IESA. Legenda nunca cobre o rosto.",
+  harley:"Sem encerramento."
+};
+const VIBE = {iesa:"premium, elegante",bmw:"house tranquilo, premium",bmw_motorrad:"aventura, épica",mini:"leve e alegre, 110 bpm",volvo:"house tranquilo, lento",byd:"eletrônica moderna e limpa",harley:"rock com atitude"};
+const ESTILOS = [
+  ["referencia","Referência","Fina, destaque em negrito, fade por palavra"],
+  ["karaoke","Karaokê","Palavra falada acende na cor"],
+  ["hormozi","Hormozi","2–3 palavras, caixa alta, pop"],
+  ["caixa","Caixa","Texto sobre caixa colorida"],
+  ["marcador","Marcador","Marca-texto no destaque"],
+  ["maquina","Máquina","Letra por letra"],
+  ["subindo","Subindo","Cada palavra sobe"],
+  ["neon","Neon","Brilho pulsando"],
+  ["impacto","Impacto","Destaque gigante no centro"],
+  ["minimal","Minimal","Pequeno e discreto"]
+];
+const WIDGETS = {
+  etiqueta_preco:{n:"Etiqueta de preço",d:"Pílula com “a partir de” e o preço",p:[["topo","Linha de cima","a partir de"],["preco","Preço","R$ 119.990"]]},
+  selo:{n:"Selo",d:"Círculo com texto curto",p:[["texto","Texto","TAXA 0%"]]},
+  faixa_oferta:{n:"Faixa de oferta",d:"Faixa diagonal no canto",p:[["texto","Texto","SUPER SALES"]]},
+  lower_third:{n:"Nome na tela",d:"Barra com nome e cargo",p:[["titulo","Nome","Ana Souza"],["sub","Cargo","Consultora BYD"]]},
+  cta:{n:"Chamada (CTA)",d:"Botão que pulsa",p:[["texto","Texto","Agende seu test drive"]]},
+  seta:{n:"Seta",d:"Seta que se desenha até um ponto",p:[["alvo","Apontar para","o farol"]]},
+  circulo_destaque:{n:"Círculo de destaque",d:"Círculo em volta de um detalhe",p:[["alvo","Destacar","a roda"]]},
+  barra_progresso:{n:"Barra de progresso",d:"Barra fina no topo durante o vídeo",p:[]},
+  contagem:{n:"Contagem",d:"Número subindo até o valor",p:[["prefixo","Antes","R$ "],["valor","Valor","100"],["sufixo","Depois"," MIL"]]}
+};
+const TRILHAS = ["trilha_premium.wav","trilha_house.wav","trilha_house_serie3.wav","trilha_house_xc60.wav","trilha_mini_leve.wav","trilha_byd.wav","trilha_aventura.wav","trilha_aventura_b.wav","trilha_original.wav","trilha_rock_b.wav","trilha_pop.wav","trilha_calmo.wav","trilha_corporativo.wav"];
+const NOME_LUT = id => id.replace(/_/g," ").replace(/^auto /,"").replace(/^pb /,"P&B ").replace(/^cinema /,"").replace(/^filme /,"");
+const $ = s => document.querySelector(s);
+const ss = (k,v) => { try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v);}catch(e){return null} };
+
+const estado = { marca:"byd", estilo:"referencia", fonte:"", lut:null, lutGrupo:"Automotivo", filtros:[], widgets:[] };
+
+/* ---------- marcas ---------- */
+function desenhaMarcas(){
+  const el = $("#marcas"); el.innerHTML="";
+  for(const [k,m] of Object.entries(D.marcas)){
+    const b=document.createElement("button"); b.type="button"; b.className="opc"; b.setAttribute("aria-pressed", k===estado.marca);
+    b.innerHTML=`<b><span class="pinta"></span></b><small></small>`;
+    b.querySelector(".pinta").style.background=m.cor; b.querySelector("b").append(m.nome);
+    b.querySelector("small").textContent = m.encerramento ? "com encerramento" : "sem encerramento";
+    b.onclick=()=>escolheMarca(k); el.append(b);
+  }
+  $("#regras").innerHTML = `<b>Regras da marca:</b> `; $("#regras").append(OBS_MARCA[estado.marca]||"");
+}
+function escolheMarca(k){
+  estado.marca=k; const m=D.marcas[k];
+  estado.fonte=m.fonte; $("#fonte").value=m.fonte;
+  estado.estilo=m.estilo||"referencia";
+  if(k==="byd") estado.lut=null;
+  $("#trilha-desc").value = VIBE[k]||"";
+  desenhaMarcas(); desenhaEstilos(); desenhaLuts(); prevRestart();
+}
+
+/* ---------- estilos de legenda (prévia) ---------- */
+const FRASE=[[["Sabe",0],["quanto",0],["custa",0]],[["o",0],["BYD",1],["Dolphin",1],["Mini?",1]]];
+let timers=[];
+function limpaTimers(){ timers.forEach(clearTimeout); timers=[]; }
+function familiaPrev(){
+  const f=estado.fonte||D.marcas[estado.marca].fonte;
+  return (f==="Soho Gothic Pro"||f==="Volvo Centum App") ? "Inter" : f;
+}
+const carregadas=new Set(["Inter"]);
+function carregaFonte(f){
+  if(carregadas.has(f)) return; carregadas.add(f);
+  const l=document.createElement("link"); l.rel="stylesheet";
+  l.href="https://fonts.googleapis.com/css2?family="+encodeURIComponent(f).replace(/%20/g,"+")+"&display=swap"; document.head.append(l);
+}
+function prevRestart(){
+  limpaTimers();
+  const tela=$("#tela"), p=$("#prev"), est=estado.estilo, cm=D.marcas[estado.marca].cor;
+  const fam=familiaPrev(); carregaFonte(fam);
+  tela.style.setProperty("--cm",cm); tela.style.fontFamily=`"${fam}",Inter,sans-serif`;
+  const ff=estado.fonte||D.marcas[estado.marca].fonte;
+  $("#aviso-fonte").textContent = (ff==="Soho Gothic Pro"||ff==="Volvo Centum App") ? `${ff} é fonte da marca: no vídeo sai a fonte real; aqui a prévia usa uma parecida.` : "";
+  const reduz = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  tela.classList.toggle("anim", !reduz);
+  p.className=""; p.innerHTML="";
+  const words=FRASE.flat(); const passo=330;
+  if(est==="hormozi"||est==="impacto"){
+    const box=document.createElement("div"); box.className="centro"; p.append(box);
+    const grupos = est==="hormozi" ? [words.slice(0,3),words.slice(3,4),words.slice(4)] : [words.filter(w=>w[1])];
+    const mostra=(g)=>{ box.innerHTML=""; const s=document.createElement("div"); s.className= est==="hormozi"?"hz":"imp";
+      g.forEach((w,i)=>{ const sp=document.createElement("span"); sp.textContent=w[0]+(i<g.length-1?" ":""); if(w[1]&&est==="hormozi") sp.className="c"; s.append(sp);}); box.append(s); };
+    if(reduz){ mostra(grupos[grupos.length-1]); return; }
+    let t= est==="impacto"?900:0; grupos.forEach(g=>{ timers.push(setTimeout(()=>mostra(g),t)); t+=900; });
+    timers.push(setTimeout(prevRestart, t+1400)); return;
+  }
+  const leg=document.createElement("div"); leg.className="leg st-"+est; p.append(leg);
+  const spans=[];
+  FRASE.forEach(ln=>{
+    const lin=document.createElement("div"); lin.className="ln"; const lspans=[];
+    ln.forEach(([w,e])=>{
+      const sp=document.createElement("span"); sp.className="w"+(e?" dest":"");
+      sp.style.fontWeight = e ? 700 : (est==="referencia"||est==="subindo"||est==="minimal"||est==="karaoke"||est==="maquina"||est==="marcador" ? 300 : 700);
+      if(est==="maquina"){ [...w].forEach(ch=>{const l=document.createElement("span"); l.className="l"; l.textContent=ch; sp.append(l);}); }
+      else sp.textContent=w;
+      lin.append(sp); spans.push(sp); lspans.push(sp);
+    });
+    if(est==="caixa"){ lin.style.display="block"; const inner=document.createElement("span"); inner.className="ln"; [...lin.childNodes].forEach(n=>inner.append(n)); lin.className=""; lin.append(inner); }
+    leg.append(lin);
+  });
+  if(reduz) return;
+  let t=300;
+  spans.forEach((sp,i)=>{
+    timers.push(setTimeout(()=>{
+      sp.classList.add("on");
+      if(est==="karaoke"){ spans.forEach(s=>s.classList.remove("cur")); sp.classList.add("cur"); }
+      if(est==="maquina") sp.querySelectorAll(".l").forEach((l,j)=>timers.push(setTimeout(()=>l.classList.add("on"),j*50)));
+      const ln=sp.closest(".leg>div"); const box=ln&&ln.querySelector(".ln"); if(box) box.classList.add("on");
+      if(est==="minimal"||est==="caixa"){ const line=sp.parentElement.closest(".ln")||sp.parentElement; line.classList.add("on"); }
+    },t)); t+=passo;
+  });
+  timers.push(setTimeout(prevRestart, t+1800));
+}
+function desenhaEstilos(){
+  const el=$("#estilos"); el.innerHTML="";
+  ESTILOS.forEach(([id,n,d])=>{
+    const b=document.createElement("button"); b.type="button"; b.className="opc"; b.setAttribute("aria-pressed", id===estado.estilo);
+    const bb=document.createElement("b"); bb.textContent=n; const sm=document.createElement("small"); sm.textContent=d; b.append(bb,sm);
+    b.onclick=()=>{ estado.estilo=id; desenhaEstilos(); prevRestart(); }; el.append(b);
+  });
+}
+function desenhaFontes(){
+  const s=$("#fonte"); s.innerHTML=""; const grupos={};
+  D.fontes.forEach(f=>{(grupos[f.c]=grupos[f.c]||[]).push(f.f)});
+  Object.entries(grupos).forEach(([g,fs])=>{ const og=document.createElement("optgroup"); og.label=g; fs.forEach(f=>{const o=document.createElement("option"); o.value=o.textContent=f; og.append(o)}); s.append(og); });
+  s.onchange=()=>{ estado.fonte=s.value; prevRestart(); };
+}
+
+/* ---------- LUTs ---------- */
+function desenhaAbasLut(){
+  const gs=[...new Set(D.luts.map(l=>l.grupo))]; const el=$("#abas-lut"); el.innerHTML="";
+  gs.forEach(g=>{ const b=document.createElement("button"); b.type="button"; b.className="aba"; b.textContent=g; b.setAttribute("aria-pressed", g===estado.lutGrupo);
+    b.onclick=()=>{estado.lutGrupo=g; desenhaAbasLut(); desenhaLuts();}; el.append(b); });
+}
+function cartaoLut(id,nome,src){
+  const b=document.createElement("button"); b.type="button"; b.className="lut"; b.setAttribute("aria-pressed", estado.lut===id);
+  const im=document.createElement("img"); im.src=src; im.alt=""; im.loading="lazy"; const sp=document.createElement("span"); sp.textContent=nome; b.append(im,sp);
+  b.onclick=()=>{ estado.lut=id; desenhaLuts(); }; return b;
+}
+function desenhaLuts(){
+  const el=$("#luts"); el.innerHTML="";
+  el.append(cartaoLut(null,"Cor original",D.thumbs._original));
+  D.luts.filter(l=>l.grupo===estado.lutGrupo).forEach(l=>el.append(cartaoLut(l.id,NOME_LUT(l.id),D.thumbs[l.id])));
+  $("#lut-int").disabled = estado.lut===null;
+}
+$("#lut-int").oninput=e=>{$("#lut-int-v").textContent=e.target.value+"%"};
+
+/* ---------- filtros ---------- */
+function opcoesFiltro(){
+  const s=$("#filtro-add"); const gr={}; D.filtros.forEach(f=>{(gr[f.grupo]=gr[f.grupo]||[]).push(f)});
+  Object.entries(gr).forEach(([g,fs])=>{const og=document.createElement("optgroup"); og.label=g; fs.forEach(f=>{const o=document.createElement("option"); o.value=f.id; o.textContent=f.id.replace(/_/g," ")+" · "+f.desc; og.append(o)}); s.append(og)});
+}
+function desenhaFiltros(){
+  const el=$("#filtros"); el.innerHTML="";
+  if(!estado.filtros.length){ el.innerHTML='<p class="vazio">Nenhum filtro. O vídeo sai só com a cor escolhida acima.</p>'; return; }
+  estado.filtros.forEach((f,i)=>{
+    const meta=D.filtros.find(x=>x.id===f[0]); const it=document.createElement("div"); it.className="item";
+    it.innerHTML=`<div><div class="nome"></div><div class="desc"></div></div><button type="button" class="btn min">Remover</button>
+      <div class="deslizador" style="grid-column:1/-1"><input type="range" min="-100" max="100" step="5" aria-label="Força"><output></output></div>`;
+    it.querySelector(".nome").textContent=f[0].replace(/_/g," "); it.querySelector(".desc").textContent=meta?meta.desc:"";
+    const r=it.querySelector("input"), o=it.querySelector("output"); r.value=f[1]; o.textContent=f[1];
+    r.oninput=()=>{f[1]=+r.value; o.textContent=r.value}; it.querySelector("button").onclick=()=>{estado.filtros.splice(i,1); desenhaFiltros()};
+    el.append(it);
+  });
+}
+$("#filtro-btn").onclick=()=>{ estado.filtros.push([$("#filtro-add").value,20]); desenhaFiltros(); };
+
+/* ---------- widgets ---------- */
+function opcoesWidget(){ const s=$("#widget-add"); Object.entries(WIDGETS).forEach(([k,w])=>{const o=document.createElement("option"); o.value=k; o.textContent=w.n+" · "+w.d; s.append(o)}); }
+function desenhaWidgets(){
+  const el=$("#widgets"); el.innerHTML="";
+  if(!estado.widgets.length){ el.innerHTML='<p class="vazio">Nenhum widget. Adicione preço, selo, CTA e outros.</p>'; return; }
+  estado.widgets.forEach((w,i)=>{
+    const meta=WIDGETS[w.tipo]; const it=document.createElement("div"); it.className="item";
+    it.innerHTML=`<div><div class="nome"></div><div class="desc"></div></div><button type="button" class="btn min">Remover</button><div class="campos"></div>`;
+    it.querySelector(".nome").textContent=meta.n; it.querySelector(".desc").textContent=meta.d;
+    const c=it.querySelector(".campos");
+    const campo=(rot,val,set)=>{ const d=document.createElement("div"); const id="w"+i+"_"+rot.replace(/\W/g,""); d.innerHTML=`<label class="rot"></label><input type="text">`;
+      d.querySelector("label").textContent=rot; d.querySelector("label").htmlFor=id; const inp=d.querySelector("input"); inp.id=id; inp.value=val; inp.oninput=()=>set(inp.value); c.append(d); };
+    meta.p.forEach(([k,rot])=>campo(rot,w.params[k]??"",v=>w.params[k]=v));
+    campo("Quando entra",w.quando,v=>w.quando=v);
+    if(w.tipo!=="barra_progresso") campo("Duração (s)",w.dur,v=>w.dur=v);
+    it.querySelector("button").onclick=()=>{estado.widgets.splice(i,1); desenhaWidgets()};
+    el.append(it);
+  });
+}
+$("#widget-btn").onclick=()=>{ const t=$("#widget-add").value; const params={}; WIDGETS[t].p.forEach(([k,,ex])=>params[k]=ex);
+  estado.widgets.push({tipo:t,params,quando:t==="barra_progresso"?"o vídeo todo":"na fala sobre preço",dur:"3"}); desenhaWidgets(); };
+
+/* ---------- trilha ---------- */
+TRILHAS.forEach(t=>{const o=document.createElement("option"); o.value=t; o.textContent=t.replace(/^trilha_|\.wav$/g,"").replace(/_/g," "); $("#trilha-sel").append(o)});
+
+/* ---------- pedido ---------- */
+function montaPedido(){
+  const m=estado.marca;
+  return {
+    nome: $("#nome").value.trim(), marca:m, drive:$("#drive").value.trim(), roteiro:$("#roteiro").value,
+    estilo_texto: estado.estilo, fonte: estado.fonte || D.marcas[m].fonte,
+    lut: estado.lut ? {id:estado.lut, intensidade:+$("#lut-int").value} : null,
+    filtros: estado.filtros.map(f=>({id:f[0],forca:f[1]})),
+    widgets: estado.widgets.map(w=>({tipo:w.tipo,params:{...w.params},quando:w.quando,dur:w.dur})),
+    trilha: $("#trilha-nova").checked ? {nova:true, clima:$("#trilha-desc").value.trim()} : {nova:false, arquivo:$("#trilha-sel").value},
+    obs: $("#obs").value.trim(),
+    saida: {largura:1440, altura:2560, fps:60, bitrate:"50M", ibama:true}
+  };
+}
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true,3200); }
+$("#copiar").onclick=async()=>{
+  const txt="Pedido Grace Studio:\n"+JSON.stringify(montaPedido(),null,2);
+  try{ await navigator.clipboard.writeText(txt); toast("Pedido copiado. Cole na conversa com o Claude."); }
+  catch(e){ const ta=document.createElement("textarea"); ta.value=txt; ta.style.minHeight="200px"; $("#estado-envio").replaceWith(ta); ta.select(); toast("Selecione e copie o texto do pedido."); }
+};
+
+let db=null, user=null, meuId=null;
+const ROTULO={fila:"Na fila",editando:"Editando",pronto:"Pronto",ajustes:"Ajustes"};
+function dataCurta(iso){ try{ return new Date(iso).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}); }catch(e){return ""} }
+async function desenhaFila(docs){
+  const el=$("#fila"); el.innerHTML="";
+  if(!docs.length){ el.innerHTML='<p class="vazio">Nenhum pedido ainda. Preencha a ficha ao lado e toque em “Enviar pedido”.</p>'; return; }
+  let nomes={}; try{ if(user&&user.profiles) nomes=await user.profiles([...new Set(docs.map(d=>d.data().autor).filter(Boolean))]); }catch(e){}
+  docs.forEach(d=>{
+    const p=d.data(); const st=p.status||"fila";
+    const det=document.createElement("details"); det.className="ped"; det.dataset.id=d.id;
+    const ab = ss("gs_aberto"); if(ab===d.id) det.open=true;
+    det.ontoggle=()=>{ if(det.open) ss("gs_aberto",d.id); };
+    det.innerHTML=`<summary><div class="cab"><span class="t"></span><span class="pill s-${st}"></span></div><div class="meta"></div></summary><div class="det"><dl></dl><div class="entrega"></div><div class="ajs"></div>
+      <label class="rot" for="aj-${d.id}">Pedir ajuste</label><textarea id="aj-${d.id}" placeholder="Ex.: no segundo 11, trocar o take da abertura"></textarea>
+      <div class="acoes"><button type="button" class="btn min">Enviar ajuste</button></div></div>`;
+    det.querySelector(".t").textContent=p.nome||"(sem nome)";
+    det.querySelector(".pill").textContent=ROTULO[st]||st;
+    const autor = p.autor && nomes[p.autor] && nomes[p.autor].name || "";
+    det.querySelector(".meta").textContent=[(D.marcas[p.marca]||{}).nome||p.marca, dataCurta(p.criado_em), autor].filter(Boolean).join(" · ");
+    const dl=det.querySelector("dl");
+    const lin=(k,v)=>{ if(!v) return; const dt=document.createElement("dt"); dt.textContent=k; const dd=document.createElement("dd"); dd.textContent=v; dl.append(dt,dd); };
+    lin("Legenda",(ESTILOS.find(e=>e[0]===p.estilo_texto)||[,p.estilo_texto])[1]); lin("Fonte",p.fonte);
+    lin("Cor",p.lut?NOME_LUT(p.lut.id)+" "+p.lut.intensidade+"%":"original");
+    lin("Filtros",(p.filtros||[]).map(f=>f.id+" "+f.forca).join(", "));
+    lin("Widgets",(p.widgets||[]).map(w=>(WIDGETS[w.tipo]||{n:w.tipo}).n).join(", "));
+    lin("Trilha",p.trilha?(p.trilha.nova?"nova · "+(p.trilha.clima||""):p.trilha.arquivo):"");
+    if(p.entrega){ const a=document.createElement("a"); a.href=p.entrega; a.textContent="Abrir vídeo final"; a.target="_blank"; a.rel="noopener"; det.querySelector(".entrega").append(a); }
+    if(p.nota){ const n=document.createElement("p"); n.style.margin="0"; n.textContent=p.nota; det.querySelector(".entrega").append(n); }
+    (p.ajustes||[]).forEach(a=>{ const q=document.createElement("p"); q.style.margin="0"; q.className="aviso-txt"; q.textContent="Ajuste "+dataCurta(a.em)+": "+a.texto; det.querySelector(".ajs").append(q); });
+    const bt=det.querySelector(".acoes button"), ta=det.querySelector("textarea");
+    bt.onclick=async()=>{ const txt=ta.value.trim(); if(!txt){ toast("Escreva o ajuste antes de enviar."); return; }
+      bt.disabled=true;
+      try{ await db.doc("pedidos/"+d.id).update({ajustes:[...(p.ajustes||[]),{texto:txt,em:new Date().toISOString(),autor:meuId}], status:"ajustes"}); toast("Ajuste enviado."); }
+      catch(e){ toast("Não deu para enviar o ajuste: "+(e.message||e.code||"sem permissão")); bt.disabled=false; } };
+    el.append(det);
+  });
+}
+$("#ficha").onsubmit=async ev=>{
+  ev.preventDefault();
+  const p=montaPedido();
+  if(!p.nome){ toast("Dê um nome ao vídeo."); $("#nome").focus(); return; }
+  if(!p.drive){ toast("Cole o link da pasta do Drive com os brutos."); $("#drive").focus(); return; }
+  if(!db){ toast("A fila não está disponível aqui. Use “Copiar pedido” e cole na conversa."); return; }
+  $("#enviar").disabled=true;
+  try{ await db.collection("pedidos").add({...p, status:"fila", criado_em:new Date().toISOString(), autor:meuId, ajustes:[]});
+    toast("Pedido enviado para a fila."); $("#nome").value=""; $("#drive").value=""; $("#roteiro").value=""; $("#obs").value=""; }
+  catch(e){ toast("Não deu para enviar: "+(e.code==="not_granted"||e.code==="permission_denied"?"você só tem acesso de leitura. Peça acesso de colaborador.":(e.message||e.code))); }
+  $("#enviar").disabled=false;
+};
+
+/* ---------- início ---------- */
+$("#tela").style.backgroundImage=`url(${D.fundo})`;
+desenhaFontes(); opcoesFiltro(); opcoesWidget(); desenhaAbasLut();
+$("#roteiro").value="Sabe quanto custa o *BYD Dolphin Mini*?\n[locução] *100% elétrico*, com autonomia para o dia a dia…";
+$("#nome").placeholder="Ex.: BYD Dolphin Mini – oferta";
+escolheMarca("byd"); desenhaFiltros(); desenhaWidgets();
+
+(async()=>{
+  const c=window.claude;
+  if(!c||!c.use){ $("#estado-envio").textContent="Fila indisponível nesta visualização. Use “Copiar pedido”."; $("#fila").innerHTML='<p class="vazio">A fila aparece quando a página é aberta no claude.ai.</p>'; return; }
+  const espera=setTimeout(()=>{ if(!db) $("#fila").innerHTML='<p class="vazio">A fila está demorando para responder. Os pedidos aparecem aqui assim que ela conectar.</p>'; },10000);
+  [db,user]=await Promise.all([c.use("db"),c.use("user")]);
+  if(user){ try{ meuId=await user.id(); }catch(e){} }
+  if(!db){ clearTimeout(espera); $("#estado-envio").textContent="Entre na sua conta do claude.ai para enviar pedidos. Ou use “Copiar pedido”."; $("#fila").innerHTML='<p class="vazio">Entre na sua conta para ver a fila.</p>'; return; }
+  $("#estado-envio").textContent="Os pedidos vão para a fila ao lado.";
+  db.collection("pedidos").orderBy("criado_em","desc").limit(100).onSnapshot(s=>{ clearTimeout(espera); desenhaFila(s.docs); },
+    e=>{ clearTimeout(espera); $("#fila").innerHTML=""; const p=document.createElement("p"); p.className="vazio"; p.textContent="Não deu para ler a fila: "+(e.message||e.code); $("#fila").append(p); });
+})();
+</script>
