@@ -48,7 +48,7 @@ FILTROS = {
     "letterbox":     ("Estilo", "Faixas pretas de cinema", lambda v: f"drawbox=x=0:y=0:w=iw:h=ih*{_k(v,0,0.12):.3f}:color=black:t=fill,drawbox=x=0:y=ih*{1-_k(v,0,0.12):.3f}:w=iw:h=ih*{_k(v,0,0.12):.3f}:color=black:t=fill"),
     "espelho":       ("Estilo", "Espelha na horizontal", lambda v: "hflip" if v >= 50 else "null"),
     "posterizar":    ("Estilo", "Reduz número de cores", lambda v: f"lutrgb=r='bitand(val,{255 - (2**int(_k(v,0,6))-1)})':g='bitand(val,{255 - (2**int(_k(v,0,6))-1)})':b='bitand(val,{255 - (2**int(_k(v,0,6))-1)})'"),
-    "luz_vazada":    ("Estilo", "Light leak quente vindo da lateral", lambda v: f"format=gbrp,split[l0][l1];[l1]geq=r='330*exp(-((X-W*0.9)^2+(Y-H*0.3)^2)/(2*(W*0.55)^2))':g='200*exp(-((X-W*0.9)^2+(Y-H*0.3)^2)/(2*(W*0.55)^2))':b='70*exp(-((X-W*0.9)^2+(Y-H*0.3)^2)/(2*(W*0.55)^2))'[ll];[l0][ll]blend=all_mode=screen:all_opacity={_k(v,0,0.9):.2f},format=yuv420p"),
+    "luz_vazada":    ("Estilo", "Light leak quente vindo da lateral", lambda v: f"format=gbrp,split[l0][l1];[l1]geq=r='min(255\\,330*exp(-((X-W*0.9)^2+(Y-H*0.3)^2)/(2*(W*0.55)^2)))':g='min(255\\,200*exp(-((X-W*0.9)^2+(Y-H*0.3)^2)/(2*(W*0.55)^2)))':b='min(255\\,70*exp(-((X-W*0.9)^2+(Y-H*0.3)^2)/(2*(W*0.55)^2)))'[ll];[l0][ll]blend=all_mode=screen:all_opacity={_k(v,0,0.9):.2f},format=yuv420p"),
     "desbotado":     ("Estilo", "Pretos levantados e cores lavadas (matte)", lambda v: f"curves=all='0/{_k(v,0,0.14):.3f} 1/{1-_k(v,0,0.05):.3f}',eq=saturation={1-_k(v,0,0.35):.2f}"),
     "duotone_azul":  ("Estilo", "Duotone azul/creme", lambda v: f"split[d0][d1];[d1]hue=s=0,curves=r='0/0.05 1/0.98':g='0/0.12 1/0.95':b='0/0.35 1/0.85'[dd];[d0][dd]blend=all_mode=normal:all_opacity={_k(v,0,1):.2f}"),
     # --- câmera / movimento ---
