@@ -52,7 +52,7 @@ def ts(x):
 
 
 def ass_header(font, font_bold):
-    reg, big, title = round(58 * K), round(120 * K), round(240 * K)
+    reg, big, title = round(66 * K), round(120 * K), round(220 * K)
     return f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: {W}
@@ -63,7 +63,7 @@ WrapStyle: 2
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Style: Reg,{font},{reg},&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,0,0,0,1
 Style: Big,{font},{big},&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,0,0,0,1
-Style: Ttl,{font},{title},&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,0,0,0,0,100,100,4,0,1,0,0,8,0,0,0,1
+Style: Ttl,{font},{title},&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,1,0,0,0,100,100,4,0,1,0,0,8,0,0,0,1
 Style: Sub,{font},{round(64 * K)},&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,0,0,0,0,100,100,2,0,1,0,0,8,0,0,0,1
 
 [Events]
@@ -77,8 +77,9 @@ def ass_line(st, en, style, tags, text, layer=1, shadow=True, x=0, y=0, mv=None)
     pos = (f"\\move({x+round(4*K)},{y+mv+round(5*K)},{x+round(4*K)},{y+round(5*K)},0,200)" if mv
            else f"\\pos({x+round(4*K)},{y+round(5*K)})")
     if shadow:
+        sh = text.replace("\\alpha&H00&", "\\alpha&H90&")   # sombra sempre translúcida
         out += (f"Dialogue: {layer-1},{ts(st)},{ts(en)},{style},,0,0,0,,"
-                f"{{{pos}\\1c&H000000&\\1a&H70&\\blur{round(10*K)}{tags}}}{text}\n")
+                f"{{{pos}\\1c&H000000&\\1a&H90&\\blur{round(10*K)}{tags}}}{sh}\n")
     pos = f"\\move({x},{y+mv},{x},{y},0,200)" if mv else f"\\pos({x},{y})"
     out += f"Dialogue: {layer},{ts(st)},{ts(en)},{style},,0,0,0,,{{{pos}{tags}}}{text}\n"
     return out
@@ -258,32 +259,29 @@ def render_pro(RAW, TIMELINE, CARDS, TITLES, OUT, tmp_name, music, font="Soho Go
             nxt = [conv2 for conv2 in []]
             en = it["t0"] + it["d"]
         en = min(en, total)
-        # altura do bloco de texto
-        bloco = sum(round(big * 1.02) if any(e for _, _, e in ln) else round(reg * 1.18) for ln in c["lines"])
+        # estilo da referência: linhas no mesmo tamanho, palavras de destaque em NEGRITO (IESA Bold),
+        # cada palavra entra com fade no tempo em que é falada
+        lh = round(reg * 1.22)
+        bloco = len(c["lines"]) * lh
         if c["pos"] == "tl":
             x, an = round(0.07 * W), "\\an7"
         else:
             x, an = W // 2, "\\an8"
         y = posicao_texto(cabecas.get(c["item"]), bloco, c["pos"])
         for line in c["lines"]:
-            words = [(w, conv(tw)) for w, tw, _ in line]
-            emph = any(e for _, _, e in line)
-            l0 = words[0][1]
-            if emph:
-                txt = " ".join(w for w, _ in words)
-                tags = (f"{an}\\fscx125\\fscy125\\t(0,180,\\fscx100\\fscy100)"
-                        f"\\alpha&HFF&\\t(0,90,\\alpha&H00&)\\blur{round(6*K)}\\t(0,200,\\blur0)")
-                ass += ass_line(l0 - 0.02, en, "Big", tags, txt, x=x, y=y, mv=round(40 * K))
-                y += round(big * 1.02)
-            else:
-                ass += ass_line(st, en, "Reg", an, reveal(words, st), x=x, y=y)
-                y += round(reg * 1.18)
+            l0 = conv(line[0][1]) - 0.04
+            txt = ""
+            for w, tw, e in line:
+                a = max(0, int((conv(tw) - l0) * 1000))
+                txt += (f"{{\\b{1 if e else 0}\\alpha&HFF&\\t({a},{a+220},\\alpha&H00&)}}{w} ")
+            ass += ass_line(l0, en, "Reg", an, txt.strip(), x=x, y=y)
+            y += lh
     for ti in TITLES:
         it = items[ti["item"]]
         t0 = it["t0"] + ti["t"]
         t1 = it["t0"] + it["d"]
         txt = ti["texto"]
-        letters = "".join(f"{{\\alpha&HFF&\\t({100+j*45},{150+j*45},\\alpha&H00&)}}{ch}"
+        letters = "".join(f"{{\\alpha&HFF&\\t({100+j*45},{260+j*45},\\alpha&H00&)}}{ch}"
                           for j, ch in enumerate(txt))
         fit = min(100, int(100 * 0.86 * W / (len(txt) * 0.66 * ttl)))   # cabe na largura
         y = round(ti.get("y", 0.16) * H)

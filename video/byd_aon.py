@@ -24,37 +24,42 @@ TIMELINE = [
     ("fala", "C756", 7.75, 12.60, 1.15),            # 14 Visite a BYD IESA… Rio Grande do Sul.
 ]
 
-R = lambda *ws: [(w, t, False) for w, t in ws]
-E = lambda *ws: [(w, t, True) for w, t in ws]
+
+# Estilo da referência: linhas curtas, mesmo tamanho; (palavra, tempo, negrito?) — negrito = destaque
+def L(*ws):
+    return [(w, t, b) for w, t, b in ws]
 
 CARDS = [
-    {"item": 0, "pos": "tl", "lines": [R(("Sabe", 1.60), ("o", 2.16), ("que", 2.30), ("mais", 2.36), ("de", 2.64)),
-                                      E(("100 MIL", 2.86)),
-                                      R(("brasileiros", 3.14), ("têm", 3.78), ("em", 4.04), ("comum?", 4.22))]},
-    {"item": 1, "pos": "c", "lines": [R(("Todos", 5.00), ("escolheram", 5.32), ("a", 5.84)), E(("BYD!", 5.98))]},
-    {"item": 3, "pos": "tl", "lines": [R(("E", 1.94), ("não", 2.42), ("é", 2.90)), E(("por acaso!", 3.10))]},
-    {"item": 4, "pos": "c", "lines": [R(("Com", 3.82), ("a", 4.06), ("BYD", 4.14), ("IESA,", 4.62), ("você", 5.22),
-                                        ("encontra", 5.28), ("a", 5.60)),
-                                      E(("tecnologia ideal", 5.74)),
-                                      R(("para", 6.98), ("o", 7.38), ("seu", 7.50), ("estilo", 7.62), ("de", 7.90),
-                                        ("vida.", 8.12))]},
-    {"item": 5, "pos": "tl", "lines": [R(("100%", 5.70), ("elétrico", 6.40), ("para", 6.90), ("aproveitar", 7.16)),
-                                      E(("a cidade.", 7.62))]},
-    {"item": 7, "pos": "tl", "lines": [R(("Ou", 1.90)), E(("HÍBRIDO", 2.62)), R(("para", 3.16), ("ir", 3.34))]},
-    {"item": 8, "pos": "c", "lines": [E(("mais longe", 4.72)), R(("na", 5.42), ("estrada.", 5.66))]},
-    {"item": 10, "pos": "c", "lines": [R(("Já", 2.90), ("imaginou", 3.70), ("rodar", 4.38)), E(("muito mais,", 4.84)),
-                                       R(("gastando", 5.72)), E(("3x MENOS?", 6.16))]},
-    {"item": 11, "pos": "tl", "lines": [R(("É", 1.04), ("uma", 1.72), ("nova", 1.90), ("forma", 2.18), ("de", 2.52),
-                                         ("dirigir,", 2.74)),
-                                       R(("com", 3.30), ("mais", 3.46)),
-                                       E(("tecnologia e autonomia.", 3.74))]},
-    {"item": 13, "pos": "tl", "lines": [R(("Escolha", 9.34), ("seu", 9.98), ("novo", 10.16), ("BYD", 10.50),
-                                         ("na", 11.00), ("IESA", 11.20)),
-                                       R(("e", 11.72), ("descubra", 11.94), ("até", 12.46), ("onde", 12.76)),
-                                       E(("ele pode chegar!", 12.98))]},
-    {"item": 14, "pos": "c", "lines": [R(("Visite", 7.80), ("a", 8.34)), E(("BYD IESA,", 8.50)),
-                                       R(("a", 10.10), ("sua", 10.12), ("concessionária", 10.28), ("BYD", 11.06)),
-                                       R(("no", 11.50), ("Rio", 11.66), ("Grande", 11.82), ("do", 12.10), ("Sul.", 12.28))]},
+    {"item": 0, "pos": "tl", "lines": [L(("Sabe", 1.60, 0), ("o", 2.16, 0), ("que", 2.30, 0), ("mais", 2.36, 0), ("de", 2.64, 0)),
+                                      L(("100", 2.86, 1), ("mil", 2.94, 1), ("brasileiros", 3.14, 0)),
+                                      L(("têm", 3.78, 0), ("em", 4.04, 0), ("comum?", 4.22, 1))]},
+    {"item": 1, "pos": "c", "lines": [L(("Todos", 5.00, 0), ("escolheram", 5.32, 0)),
+                                      L(("a", 5.84, 0), ("BYD!", 5.98, 1))]},
+    {"item": 3, "pos": "tl", "lines": [L(("E", 1.94, 0), ("não", 2.42, 0), ("é", 2.90, 0)),
+                                      L(("por", 3.10, 1), ("acaso!", 3.26, 1))]},
+    {"item": 4, "pos": "c", "lines": [L(("Com", 3.82, 0), ("a", 4.06, 0), ("BYD", 4.14, 1), ("IESA,", 4.62, 1)),
+                                      L(("você", 5.22, 0), ("encontra", 5.28, 0), ("a", 5.60, 0)),
+                                      L(("tecnologia", 5.74, 1), ("ideal", 6.24, 1)),
+                                      L(("para", 6.98, 0), ("o", 7.38, 0), ("seu", 7.50, 0), ("estilo", 7.62, 0), ("de", 7.90, 0), ("vida.", 8.12, 0))]},
+    {"item": 5, "pos": "tl", "lines": [L(("100%", 5.70, 1), ("elétrico", 6.40, 1)),
+                                      L(("para", 6.90, 0), ("aproveitar", 7.16, 0)),
+                                      L(("a", 7.62, 0), ("cidade.", 7.76, 1))]},
+    {"item": 7, "pos": "tl", "lines": [L(("Ou", 1.90, 0), ("híbrido", 2.62, 1)),
+                                      L(("para", 3.16, 0), ("ir", 3.34, 0))]},
+    {"item": 8, "pos": "c", "lines": [L(("mais", 4.72, 1), ("longe", 5.06, 1)),
+                                      L(("na", 5.42, 0), ("estrada.", 5.66, 0))]},
+    {"item": 10, "pos": "c", "lines": [L(("Já", 2.90, 0), ("imaginou", 3.70, 0), ("rodar", 4.38, 0)),
+                                       L(("muito", 4.84, 1), ("mais,", 5.22, 1)),
+                                       L(("gastando", 5.72, 0), ("3x", 6.16, 1), ("menos?", 6.84, 1))]},
+    {"item": 11, "pos": "tl", "lines": [L(("É", 1.04, 0), ("uma", 1.72, 0), ("nova", 1.90, 1), ("forma", 2.18, 1)),
+                                       L(("de", 2.52, 0), ("dirigir,", 2.74, 0), ("com", 3.30, 0), ("mais", 3.46, 0)),
+                                       L(("tecnologia", 3.74, 1), ("e", 4.50, 0), ("autonomia.", 4.96, 1))]},
+    {"item": 13, "pos": "tl", "lines": [L(("Escolha", 9.34, 0), ("seu", 9.98, 0), ("novo", 10.16, 0), ("BYD", 10.50, 1)),
+                                       L(("na", 11.00, 0), ("IESA", 11.20, 1), ("e", 11.72, 0), ("descubra", 11.94, 0)),
+                                       L(("até", 12.46, 0), ("onde", 12.76, 0), ("ele", 12.98, 0), ("pode", 13.20, 1), ("chegar!", 13.38, 1))]},
+    {"item": 14, "pos": "c", "lines": [L(("Visite", 7.80, 0), ("a", 8.34, 0), ("BYD", 8.50, 1), ("IESA,", 8.98, 1)),
+                                       L(("a", 10.10, 0), ("sua", 10.12, 0), ("concessionária", 10.28, 0), ("BYD", 11.06, 1)),
+                                       L(("no", 11.50, 0), ("Rio", 11.66, 1), ("Grande", 11.82, 1), ("do", 12.10, 1), ("Sul.", 12.28, 1))]},
 ]
 
 TITLES = [
