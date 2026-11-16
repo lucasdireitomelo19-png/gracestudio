@@ -1,0 +1,17 @@
+{
+  "iesa":    {"nome": "Grupo IESA", "fonte": "Soho Gothic Pro", "fonte_bold": "Soho Gothic Pro", "cor": "#1E4FA3",
+              "encerramento": "encerramento_grupo_iesa.mp4", "estilo_texto": "referencia", "lut": null, "trilha": "trilha_premium.wav"},
+  "bmw":     {"nome": "BMW", "fonte": "Soho Gothic Pro", "fonte_bold": "Soho Gothic Pro", "cor": "#1C69D4",
+              "encerramento": "encerramento_bmw.mp4", "estilo_texto": "referencia", "lut": null, "trilha": "trilha_house_serie3.wav",
+              "obs": "encerramento BMW só para carros"},
+  "bmw_motorrad": {"nome": "BMW Motorrad", "fonte": "Soho Gothic Pro", "fonte_bold": "Soho Gothic Pro", "cor": "#1C69D4",
+              "encerramento": null, "estilo_texto": "referencia", "lut": null, "trilha": "trilha_aventura.wav"},
+  "mini":    {"nome": "MINI", "fonte": "Soho Gothic Pro", "fonte_bold": "Soho Gothic Pro", "cor": "#000000",
+              "encerramento": null, "estilo_texto": "referencia", "lut": null, "trilha": "trilha_mini_leve.wav"},
+  "volvo":   {"nome": "Volvo", "fonte": "Volvo Centum App", "fonte_bold": "Volvo Centum App", "cor": "#2A3B4C",
+              "encerramento": "encerramento_volvo.mp4", "estilo_texto": "referencia", "lut": null, "trilha": "trilha_house.wav"},
+  "byd":     {"nome": "BYD", "fonte": "Soho Gothic Pro", "fonte_bold": "Soho Gothic Pro", "cor": "#00A3E0",
+              "encerramento": "encerramento_grupo_iesa.mp4", "estilo_texto": "referencia", "lut": null, "trilha": "trilha_byd.wav"},
+  "harley":  {"nome": "Harley-Davidson", "fonte": "Soho Gothic Pro", "fonte_bold": "Soho Gothic Pro", "cor": "#F26722",
+              "encerramento": null, "estilo_texto": "referencia", "lut": null, "trilha": "trilha_original.wav"}
+}

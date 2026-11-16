@@ -13,6 +13,10 @@ import os, subprocess, wave
 import numpy as np
 from scipy.signal import butter, sosfilt
 from rosto import cabeca
+import sys as _sys
+_sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")))
+from studio.estilos_texto import gerar as gerar_estilo, estilos_ass
+from studio.widgets import widget, estilo_ass as estilo_widgets
 from montagem import (W, H, FPS, BITRATE, K, GRADE, WORK, ASSETS, ajustar_corte, run,
                       FLARE_PEAK, FLARE_IN, FLARE_OUT, TAIL)
 
@@ -117,7 +121,8 @@ def posicao_texto(cab, bloco, pos):
 # ---------- montagem ----------
 def render_pro(RAW, TIMELINE, CARDS, TITLES, OUT, tmp_name, music, font="Soho Gothic Pro",
                font_bold="Soho Gothic Pro", drop_item=None, ending=None, music_lufs=-21.0,
-               cor=True, reaproveitar=False):
+               cor=True, reaproveitar=False, estilo_texto="referencia", cor_marca="#FFFFFF",
+               widgets=None, filtros=None):
     """cor=False: mantém a cor original do bruto. reaproveitar=True: reusa planos já cortados."""
     tmp = f"{WORK}/tmp_{tmp_name}"
     os.makedirs(tmp, exist_ok=True)
@@ -202,6 +207,10 @@ def render_pro(RAW, TIMELINE, CARDS, TITLES, OUT, tmp_name, music, font="Soho Go
                 tl = it["t0"] + (line[0][1] - it["s"])
                 text_ev.append(tl)
                 sfx_ev.append((tl, "pop.wav", -20))
+    for wd in (widgets or []):
+        tw = items[wd["item"]]["t0"] + wd.get("t", 0)
+        sfx_ev.append((tw - 0.12, "swish.wav", -14))
+        sfx_ev.append((tw + 0.05, "pop.wav", -18))
     for ti in TITLES:
         it = items[ti["item"]]
         for j in range(len(ti["texto"])):
@@ -244,6 +253,8 @@ def render_pro(RAW, TIMELINE, CARDS, TITLES, OUT, tmp_name, music, font="Soho Go
 
     # 6) textos animados + cartelas
     hdr, reg, big, ttl = ass_header(font, font_bold)
+    hdr = hdr.replace("\n[Events]", "\n" + estilos_ass(font, font_bold, reg, cor_marca, K)
+                      + estilo_widgets(font, font_bold, K) + "\n[Events]")
     # onde está a cabeça da pessoa em cada plano de fala (a legenda nunca cobre o rosto)
     cabecas = {k: cabeca(src(it["f"]), it["s"], it["e"], it["z"])
                for k, it in enumerate(items) if it["kind"] == "fala"}
@@ -268,6 +279,26 @@ def render_pro(RAW, TIMELINE, CARDS, TITLES, OUT, tmp_name, music, font="Soho Go
         else:
             x, an = W // 2, "\\an8"
         y = posicao_texto(cabecas.get(c["item"]), bloco, c["pos"])
+        if estilo_texto != "referencia":
+            todas = [(w, conv(tw), e) for ln in c["lines"] for w, tw, e in ln]
+            fins = [todas[i + 1][1] for i in range(len(todas) - 1)] + [en]
+            mapa = {id(x): f for x, f in zip(todas, fins)}
+            linhas, k = [], 0
+            for ln in c["lines"]:
+                row = []
+                for w, tw, e in ln:
+                    row.append((w, conv(tw), min(fins[k], conv(tw) + 0.6), bool(e)))
+                    k += 1
+                linhas.append(row)
+            if estilo_texto in ("hormozi", "impacto"):
+                xx = W // 2
+                yy = posicao_texto(cabecas.get(c["item"]), round(reg * 2), "c") + round(reg)
+            else:
+                xx, yy = x, y
+            ev, _ = gerar_estilo(estilo_texto, linhas, xx, yy, reg, 7 if c["pos"] == "tl" else 8,
+                                 cor_marca, fim=en, K=K)
+            ass += ev
+            continue
         for line in c["lines"]:
             l0 = conv(line[0][1]) - 0.04
             txt = ""
@@ -291,6 +322,13 @@ def render_pro(RAW, TIMELINE, CARDS, TITLES, OUT, tmp_name, music, font="Soho Go
             ts_ = 0.10 + len(txt) * 0.045 + 0.1
             ass += ass_line(t0, t1, "Sub", f"\\an8\\alpha&HFF&\\t({int(ts_*1000)},{int(ts_*1000)+200},\\alpha&H00&)",
                             ti["sub"], x=W // 2, y=y + round(ttl * 1.02 * fit / 100), layer=3)
+    for wd in (widgets or []):
+        it = items[wd["item"]]
+        tw0 = it["t0"] + wd.get("t", 0)
+        tw1 = min(total, tw0 + wd.get("dur", it["d"] - wd.get("t", 0)))
+        ev, _ = widget(wd["tipo"], tw0, tw1, W, H, K, {"cor": cor_marca, "cor_texto": wd.get("cor_texto", "#FFFFFF")},
+                       **wd.get("params", {}))
+        ass += ev
     with open(f"{tmp}/text.ass", "w") as fh:
         fh.write(ass)
 
@@ -299,7 +337,10 @@ def render_pro(RAW, TIMELINE, CARDS, TITLES, OUT, tmp_name, music, font="Soho Go
               "-i", f"{tmp}/sfx.wav", "-loop", "1", "-i", f"{ASSETS}/template_ibama.png"]
     if ending:
         inputs += ["-i", ending]                        # 5
-    fc = (f"[0:v]{GRADE},format=gbrp[g0];" if cor else "[0:v]format=gbrp[g0];")
+    if filtros:
+        fc = f"[0:v]{filtros},format=gbrp[g0];"
+    else:
+        fc = (f"[0:v]{GRADE},format=gbrp[g0];" if cor else "[0:v]format=gbrp[g0];")
     fc += f"color=black:s={W}x{H}:r={FPS}:d={total:.3f},format=gbrp[fl0];"
     for k, tc in enumerate(flares):
         idx = 5 + (1 if ending else 0) + k
