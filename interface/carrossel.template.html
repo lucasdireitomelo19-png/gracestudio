@@ -1,0 +1,413 @@
+<title>Grace Studio Carrosséis</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Figtree:wght@300;400;600;700;800;900&family=Manrope:wght@300;500;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+/* Layout: mesma ilha de edição do Modo Editor (tema escuro único). Topo = etapas; meio = briefing | slide ativo | agentes; base = faixa de slides com pistas. */
+:root{
+  color-scheme:dark;
+  --fundo:#0C0A22; --painel:#151239; --painel2:#1C1850; --linha:#2E2970; --texto:#EEEBFF; --mudo:#9D97D8;
+  --coral:#FF7A45; --ciano:#45D6FF; --amarelo:#FFD24A; --azul:#7C8CFF; --verde:#4ADE9B; --rosa:#FF5FA8; --vermelho:#FF4D5E;
+  --f-etapa:"Anton","Impact",sans-serif; --f-texto:"Inter",system-ui,sans-serif; --f-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{background:var(--fundo)}
+body{color:var(--texto);font-family:var(--f-texto);font-size:13px;line-height:1.45;
+  padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));padding-block:12px 24px}
+.app{max-width:1400px;margin:0 auto;border-radius:16px;padding:2px;background:linear-gradient(120deg,var(--ciano),var(--azul) 45%,var(--rosa))}
+.dentro{background:var(--fundo);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden}
+.barra{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700}
+.logo i{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,var(--ciano),var(--rosa));display:inline-block}
+.logo small{font-family:var(--f-mono);font-weight:400;color:var(--mudo)}
+.etapas{display:flex;flex-wrap:wrap;gap:4px}
+.etapa{font:600 12px var(--f-texto);padding:4px 10px;border-radius:999px;border:1px solid var(--linha);background:var(--painel);color:var(--mudo)}
+.etapa.feita{color:var(--texto)}
+.etapa.feita::before{content:"✓ ";color:var(--verde)}
+.etapa.ativa{background:var(--amarelo);color:#1A1440;border-color:var(--amarelo)}
+.contador{font-family:var(--f-mono);font-size:13px;color:var(--coral);font-weight:600;font-variant-numeric:tabular-nums}
+.contador span{color:var(--mudo);font-weight:400}
+.meio{display:grid;grid-template-columns:minmax(220px,290px) minmax(0,1fr) minmax(220px,290px);gap:10px}
+@media (max-width:980px){.meio{grid-template-columns:minmax(0,1fr)}}
+.caixa{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:12px;min-width:0;position:relative}
+.caixa h3{margin:0 0 8px;font-size:14px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.caixa h3 span{font:400 11px var(--f-mono);color:var(--coral)}
+.form{display:flex;flex-direction:column;gap:9px}
+label.rot{display:block;font:600 10px var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--mudo);margin-bottom:3px}
+input[type=text],select,textarea{width:100%;font:inherit;color:var(--texto);background:var(--fundo);border:1px solid var(--linha);border-radius:8px;padding:7px 9px}
+textarea{resize:vertical;min-height:64px}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.check{display:flex;gap:6px;align-items:center;cursor:pointer}
+.check input{accent-color:var(--ciano)}
+.fotos{display:flex;gap:5px;flex-wrap:wrap}
+.fotos img{width:40px;height:50px;object-fit:cover;border-radius:4px;border:1px solid var(--linha)}
+.btn{font:600 13px var(--f-texto);cursor:pointer;border-radius:8px;padding:8px 14px;border:1px solid var(--linha);background:var(--painel2);color:var(--texto)}
+.btn.prim{background:var(--coral);border-color:var(--coral);color:#1A1440}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.min{padding:4px 9px;font-size:12px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,.btn:focus-visible,.slide-mini:focus-visible{outline:2px solid var(--ciano);outline-offset:2px}
+.palco h2{font-family:var(--f-etapa);font-weight:400;font-size:clamp(24px,3vw,38px);line-height:1;margin:0;text-transform:uppercase}
+.palco h2 em{font-style:normal;color:var(--amarelo)}
+.palco .sub{color:var(--mudo);margin:2px 0 10px}
+.palco .numero{position:absolute;right:14px;top:12px;font-family:var(--f-mono);font-weight:600;font-size:clamp(20px,2.4vw,28px);font-variant-numeric:tabular-nums}
+.palco-corpo{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:640px){.palco-corpo{grid-template-columns:minmax(0,1fr)}}
+.grande{width:100%;max-width:300px;aspect-ratio:4/5;border-radius:10px;overflow:hidden;background:#000;box-shadow:0 0 0 1px var(--linha)}
+.grande canvas{width:100%;height:100%;display:block}
+.info{min-width:0;display:flex;flex-direction:column;gap:8px}
+.stream{font:12px/1.55 var(--f-mono);color:var(--ciano);background:var(--fundo);border:1px solid var(--linha);border-radius:8px;padding:8px;max-height:260px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+.editar{display:flex;flex-direction:column;gap:7px}
+.aviso{color:var(--mudo);font-size:12px;margin:0}
+.aviso b{color:var(--amarelo)}
+.quadrados{display:flex;gap:3px;margin:0 0 10px;flex-wrap:wrap}
+.quadrados i{width:12px;height:12px;border-radius:3px;opacity:.35;transition:opacity .2s}
+.quadrados i.on{opacity:1}
+.log{display:flex;flex-direction:column;gap:4px;font-size:12px;max-height:330px;overflow:hidden}
+.log div{display:grid;grid-template-columns:84px minmax(0,1fr);gap:8px;animation:entra .25s ease-out}
+.log code{font:600 11px var(--f-mono)}
+.log span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@keyframes entra{from{opacity:0;transform:translateY(-4px)}}
+.faixa{overflow-x:auto}
+.tl{display:grid;grid-template-columns:70px minmax(0,1fr);gap:0 8px;padding:10px;min-width:720px}
+.nomes{display:flex;flex-direction:column;gap:4px}
+.nomes div{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;height:18px}
+.nomes div.alto{height:124px}
+.nomes i{width:9px;height:9px;border-radius:3px;display:inline-block}
+.colunas{display:grid;gap:6px}
+.col{display:flex;flex-direction:column;gap:4px;min-width:0}
+.slide-mini{width:99px;height:124px;align-self:center;flex:none;border-radius:6px;overflow:hidden;border:2px solid transparent;cursor:pointer;background:var(--painel2);padding:0}
+.slide-mini canvas{width:100%;height:100%;display:block}
+.slide-mini[aria-pressed="true"]{border-color:var(--amarelo)}
+.blk{height:18px;border-radius:4px;background:rgba(255,255,255,.04);font:600 9px/18px var(--f-mono);padding:0 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#140F33;transition:background .3s}
+.transporte{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:0 10px 10px}
+.grupo{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.tempo{font-family:var(--f-mono);color:var(--mudo)}
+.vel{font:600 12px var(--f-mono);padding:4px 8px;border-radius:6px;border:1px solid var(--linha);background:var(--painel);color:var(--mudo);cursor:pointer}
+.vel[aria-pressed="true"]{color:var(--fundo);background:var(--ciano);border-color:var(--ciano)}
+.cursor{position:absolute;left:0;top:0;pointer-events:none;z-index:5;transition:transform .45s cubic-bezier(.3,.7,.2,1),opacity .3s;display:flex;align-items:flex-start;gap:2px}
+.cursor svg{width:14px;height:14px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
+.cursor b{font:600 10px var(--f-mono);padding:1px 5px;border-radius:4px;color:#140F33;margin-top:10px}
+@media (prefers-reduced-motion:reduce){.cursor{display:none}.log div{animation:none}}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--texto);color:var(--fundo);padding:10px 16px;border-radius:8px;font-weight:600;z-index:20;max-width:calc(100% - 32px)}
+.legenda-post{font-size:12px;white-space:pre-wrap;background:var(--fundo);border:1px solid var(--linha);border-radius:8px;padding:8px;max-height:140px;overflow:auto}
+</style>
+
+<div class="app"><div class="dentro" id="app">
+  <div class="barra">
+    <div class="logo"><i></i>Carrosséis <small id="proj">Grace Studio</small></div>
+    <div class="etapas" id="etapas"></div>
+    <div class="contador" id="contador">0<span>/0 ações</span></div>
+  </div>
+  <div class="meio">
+    <form class="caixa form" id="briefing" novalidate>
+      <h3>Briefing <span id="exemplo">exemplo carregado</span></h3>
+      <div><label class="rot" for="marca">Marca</label><select id="marca"></select></div>
+      <div><label class="rot" for="tema">Tema do carrossel</label><textarea id="tema"></textarea></div>
+      <div><label class="rot" for="objetivo">Objetivo</label><select id="objetivo"><option>Gerar test drive</option><option>Divulgar oferta</option><option>Apresentar modelo</option><option>Educar sobre o produto</option><option>Institucional da loja</option></select></div>
+      <div class="duas">
+        <div><label class="rot" for="nslides">Slides</label><select id="nslides"><option>5</option><option selected>6</option><option>7</option><option>8</option><option>10</option></select></div>
+        <div><label class="rot" for="tom">Tom</label><select id="tom"><option>Premium</option><option>Direto</option><option>Leve</option><option>Técnico</option></select></div>
+      </div>
+      <div><label class="rot" for="cta">Chamada final</label><input type="text" id="cta"></div>
+      <div><label class="rot" for="dados">Dados obrigatórios (preço, condição, prazo)</label><textarea id="dados" style="min-height:48px" placeholder="Só entra no carrossel o que estiver aqui."></textarea></div>
+      <div><label class="rot" for="arquivos">Fotos</label><input type="file" id="arquivos" accept="image/*" multiple><div class="fotos" id="fotos" style="margin-top:6px"></div></div>
+      <label class="check"><input type="checkbox" id="ibama" checked> Selo Ibama em todos os slides</label>
+      <button class="btn prim" type="submit" id="gerar">Gerar carrossel</button>
+      <p class="aviso" id="aviso-ia"></p>
+    </form>
+    <div class="caixa palco"><h2 id="titulo"></h2><p class="sub" id="subtitulo"></p><div class="numero" id="numero"></div>
+      <div class="palco-corpo">
+        <div class="grande"><canvas id="grande" width="1080" height="1350"></canvas></div>
+        <div class="info" id="info"></div>
+      </div>
+    </div>
+    <div class="caixa"><h3>Agentes <span id="ativos"></span></h3><div class="quadrados" id="quadrados"></div><div class="log" id="log"></div></div>
+  </div>
+  <div class="caixa" style="padding:0">
+    <div class="faixa"><div class="tl"><div class="nomes" id="nomes"></div><div class="colunas" id="colunas"></div></div></div>
+    <div class="transporte">
+      <div class="grupo"><span class="tempo">Velocidade</span><span id="vels"></span><button class="btn" type="button" id="pausa" disabled>Pausar</button></div>
+      <div class="grupo"><button class="btn" type="button" id="copiar">Copiar legenda do post</button><button class="btn prim" type="button" id="exportar">Baixar slides (PNG 1080×1350)</button></div>
+    </div>
+  </div>
+</div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const A = __ASSETS__;
+const $ = s => document.querySelector(s);
+const el = (t,c,x) => { const e=document.createElement(t); if(c) e.className=c; if(x!=null) e.textContent=x; return e; };
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const reduz = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const W=1080, H=1350;
+const MARCAS = {
+  byd:{nome:"BYD",cor:"#00A3E0",fonte:"Figtree",logo:"logo_grupo_iesa"},
+  bmw:{nome:"BMW",cor:"#1C69D4",fonte:"Figtree",logo:"logo_bmw"},
+  bmw_motorrad:{nome:"BMW Motorrad",cor:"#1C69D4",fonte:"Figtree",logo:"logo_grupo_iesa"},
+  mini:{nome:"MINI",cor:"#F4C300",fonte:"Figtree",logo:"logo_grupo_iesa"},
+  volvo:{nome:"Volvo",cor:"#4A6B8A",fonte:"Manrope",logo:"logo_volvo"},
+  harley:{nome:"Harley-Davidson",cor:"#F26722",fonte:"Figtree",logo:"logo_grupo_iesa"},
+  iesa:{nome:"Grupo IESA",cor:"#1E4FA3",fonte:"Figtree",logo:"logo_grupo_iesa"}
+};
+const ETAPAS=["Briefing","Roteiro","Layout","Tipografia","Imagens","Cor","Exportar"];
+const AG_COR={briefing:"--ciano",roteiro:"--amarelo",layout:"--rosa",tipo:"--azul",imagem:"--verde",cor:"--coral",export:"--ciano"};
+const PISTAS=[["texto","Texto","--amarelo"],["layout","Layout","--rosa"],["imagem","Imagem","--verde"],["marca","Marca","--coral"]];
+const LAYOUTS={capa:"Capa com foto",foto:"Foto + texto",lista:"Lista",numero:"Número grande",citacao:"Frase de impacto",cta:"Chamada final"};
+
+/* ---------- estado ---------- */
+let C = null;            // carrossel: {marca, slides:[{tipo,titulo,destaque,texto,itens,numero,layout,foto,tam}], legenda}
+let fotos = A.fotos.map(src=>({src, img:null}));
+let sel = 0, acoes=0, totalAcoes=0, etapa=-1, log=[], vel=1, pausado=false, rodando=false;
+const imgs = {};
+function carrega(src){ return new Promise(r=>{ const i=new Image(); i.onload=()=>r(i); i.onerror=()=>r(null); i.src=src; }); }
+
+/* ---------- briefing ---------- */
+Object.entries(MARCAS).forEach(([k,m])=>{ const o=el("option",null,m.nome); o.value=k; $("#marca").append(o); });
+$("#marca").value="byd";
+$("#tema").value="BYD Dolphin Mini: o elétrico mais vendido do Brasil, ideal para o dia a dia na cidade.";
+$("#cta").value="Agende seu test drive na BYD IESA";
+function desenhaFotos(){ const f=$("#fotos"); f.innerHTML=""; fotos.forEach(x=>{ const i=el("img"); i.src=x.src; i.alt=""; f.append(i); }); }
+$("#arquivos").onchange=async e=>{
+  const fs=[...e.target.files].slice(0,12); if(!fs.length) return;
+  fotos = await Promise.all(fs.map(f=>new Promise(r=>{ const rd=new FileReader(); rd.onload=()=>r({src:rd.result,img:null}); rd.readAsDataURL(f); })));
+  for(const f of fotos) f.img=await carrega(f.src);
+  desenhaFotos(); toast(fotos.length+" foto(s) carregada(s). Gere o carrossel para usar.");
+};
+
+/* ---------- etapas / agentes / cursores ---------- */
+ETAPAS.forEach(n=>$("#etapas").append(el("span","etapa",n)));
+for(let i=0;i<14;i++){ const q=el("i"); q.style.background=css(Object.values(AG_COR)[i%7]); $("#quadrados").append(q); }
+$("#ativos").textContent="14 ativos";
+function marcaEtapa(e){ etapa=e; document.querySelectorAll(".etapa").forEach((b,i)=>{ b.classList.toggle("ativa",i===e); b.classList.toggle("feita",i<e||e>=ETAPAS.length); });
+  Object.entries(cursores).forEach(([n,c])=>c.style.opacity= e<ETAPAS.length && n.startsWith(["briefing","roteiro","layout","tipo","imagem","cor","export"][e]) ? 1 : 0); }
+function registra(ag,msg){ log.unshift([ag,msg]); log=log.slice(0,30); acoes++;
+  const l=$("#log"); l.innerHTML=""; log.slice(0,18).forEach(([a,m])=>{ const d=el("div"); const c=el("code",null,a); c.style.color=css(AG_COR[a.split("-")[0]]||"--ciano"); d.append(c,el("span",null,m)); l.append(d); });
+  $("#contador").innerHTML=""; $("#contador").append(String(acoes)); $("#contador").append(el("span",null,"/"+Math.max(acoes,totalAcoes)+" ações"));
+  const q=$("#quadrados").children; for(let i=0;i<q.length;i++) q[i].classList.toggle("on", i<=acoes%14 || !rodando); }
+const cursores={};
+function aponta(nome, alvo){
+  if(reduz||!alvo) return;
+  let c=cursores[nome];
+  if(!c){ c=el("div","cursor"); c.innerHTML='<svg viewBox="0 0 14 14"><path d="M1 1 L1 12 L4.5 8.8 L7 13 L9 12 L6.6 7.9 L11 7.6 Z" fill="#fff" stroke="#140F33"/></svg>'; const b=el("b",null,nome); b.style.background=css(AG_COR[nome.split("-")[0]]||"--ciano"); c.append(b); c.style.transform="translate(50%,200px)"; $("#app").append(c); cursores[nome]=c; }
+  const a=$("#app").getBoundingClientRect(), r=alvo.getBoundingClientRect(); c.style.opacity=1;
+  c.style.transform=`translate(${r.left-a.left+Math.min(r.width*.6,50)}px,${r.top-a.top+r.height*.45}px)`;
+}
+function palco(t,sub){ $("#titulo").innerHTML=t; $("#subtitulo").textContent=sub; }
+let esperaPausa=null;
+async function espera(ms){ if(reduz) ms=0; await new Promise(r=>setTimeout(r, ms/vel)); while(pausado) await new Promise(r=>{ esperaPausa=r; }); }
+
+/* ---------- render de slide no canvas ---------- */
+function corTexto(hex){ const h=hex.replace("#",""); const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16); return (r*299+g*587+b*114)/1000>150?"#111":"#fff"; }
+function quebra(ctx, palavras, larg){ const linhas=[[]]; let x=0; const esp=ctx.measureText(" ").width;
+  palavras.forEach(p=>{ const w=ctx.measureText(p.t).width; if(x+w>larg && linhas[linhas.length-1].length){ linhas.push([]); x=0; } linhas[linhas.length-1].push({...p,w}); x+=w+esp; }); return linhas; }
+function tokens(texto, destaque){ const dest=(destaque||"").toLowerCase().split(/\s+/).filter(Boolean);
+  return (texto||"").split(/\s+/).filter(Boolean).map(t=>({t, d:dest.includes(t.toLowerCase().replace(/[.,!?:;]/g,""))})); }
+function ajusta(ctx, texto, destaque, larg, altMax, tamMax, tamMin, peso, fam){
+  for(let tam=tamMax; tam>=tamMin; tam-=4){ ctx.font=`${peso} ${tam}px "${fam}"`; const ls=quebra(ctx,tokens(texto,destaque),larg); if(ls.length*tam*1.08<=altMax) return {tam,ls}; }
+  ctx.font=`${peso} ${tamMin}px "${fam}"`; return {tam:tamMin, ls:quebra(ctx,tokens(texto,destaque),larg)};
+}
+function escreve(ctx, bloco, x, y, cor, corDest, peso, fam, lh=1.08){
+  bloco.ls.forEach((ln,i)=>{ let xx=x; ln.forEach(p=>{ ctx.font=`${peso} ${bloco.tam}px "${fam}"`; ctx.fillStyle=p.d?corDest:cor; ctx.fillText(p.t,xx,y+i*bloco.tam*lh); xx+=p.w+ctx.measureText(" ").width; }); });
+  return y+bloco.ls.length*bloco.tam*lh;
+}
+function cobre(ctx, img, x, y, w, h){ if(!img){ ctx.fillStyle="#1a1a1a"; ctx.fillRect(x,y,w,h); return; }
+  const s=Math.max(w/img.width,h/img.height), iw=img.width*s, ih=img.height*s; ctx.save(); ctx.beginPath(); ctx.rect(x,y,w,h); ctx.clip(); ctx.drawImage(img, x+(w-iw)/2, y+(h-ih)/2, iw, ih); ctx.restore(); }
+function render(ctx, s, i, n, fase=9){
+  const m=MARCAS[C.marca], fam=m.fonte, cor=m.cor, M=84;
+  ctx.save(); ctx.clearRect(0,0,W,H); ctx.textBaseline="top";
+  const lay = fase>=2 ? s.layout : null;
+  const img = fase>=4 && s.foto!=null && fotos[s.foto] ? fotos[s.foto].img : null;
+  const temCor = fase>=5;
+  // fundo
+  if(!lay){ ctx.fillStyle="#15131f"; ctx.fillRect(0,0,W,H); ctx.strokeStyle="rgba(255,255,255,.12)"; ctx.lineWidth=3; ctx.setLineDash([18,14]); ctx.strokeRect(40,40,W-80,H-80); ctx.setLineDash([]); }
+  else if(lay==="capa"||lay==="citacao"){ cobre(ctx,img,0,0,W,H); const g=ctx.createLinearGradient(0,H*.3,0,H); g.addColorStop(0,"rgba(0,0,0,0)"); g.addColorStop(1,"rgba(0,0,0,.88)"); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); if(lay==="citacao"){ ctx.fillStyle="rgba(0,0,0,.45)"; ctx.fillRect(0,0,W,H);} }
+  else if(lay==="foto"){ ctx.fillStyle="#0f0f12"; ctx.fillRect(0,0,W,H); cobre(ctx,img,0,0,W,H*.56); }
+  else if(lay==="lista"||lay==="numero"){ ctx.fillStyle= temCor? cor : "#22202e"; ctx.fillRect(0,0,W,H); if(img&&lay==="numero"){ ctx.globalAlpha=.18; cobre(ctx,img,0,0,W,H); ctx.globalAlpha=1; } }
+  else if(lay==="cta"){ ctx.fillStyle="#0b0b0e"; ctx.fillRect(0,0,W,H); if(img){ ctx.globalAlpha=.35; cobre(ctx,img,0,0,W,H*.62); ctx.globalAlpha=1; const g=ctx.createLinearGradient(0,H*.2,0,H*.62); g.addColorStop(0,"rgba(11,11,14,0)"); g.addColorStop(1,"#0b0b0e"); ctx.fillStyle=g; ctx.fillRect(0,0,W,H*.62);} }
+  const branco="#fff", dest = temCor ? (lay==="lista"||lay==="numero" ? corTexto(cor)==="#fff"?"#0b0b0e":"#fff" : cor) : branco;
+  const txtCor = (lay==="lista"||lay==="numero") && temCor ? corTexto(cor) : branco;
+  if(fase>=1){
+    const fT = fase>=3 ? 1 : 0;  // tipografia ajustada?
+    if(!lay){ ctx.fillStyle="rgba(255,255,255,.85)"; ctx.font=`700 56px "${fam}"`; const b=ajusta(ctx,s.titulo,"",W-2*M-40,600,64,40,700,fam); escreve(ctx,b,M+20,M+40,"#fff","#fff",700,fam); ctx.font=`400 34px "${fam}"`; const b2=ajusta(ctx,s.texto||"","",W-2*M-40,400,34,26,400,fam); escreve(ctx,b2,M+20,H*.55,"rgba(255,255,255,.7)","#fff",400,fam,1.3); }
+    else if(lay==="capa"){ ctx.shadowColor="rgba(0,0,0,.5)"; ctx.shadowBlur=24; const b=ajusta(ctx,s.titulo,s.destaque,W-2*M,H*.32,fT?150:110,64,800,fam); const y0=H-M-150-b.ls.length*b.tam*1.08; let y=escreve(ctx,b,M,y0,branco,dest,800,fam);
+      if(s.texto){ const b2=ajusta(ctx,s.texto,"",W-2*M,120,40,30,400,fam); escreve(ctx,b2,M,y+18,"rgba(255,255,255,.85)",branco,400,fam,1.25); } ctx.shadowBlur=0; ctx.shadowColor="transparent"; }
+    else if(lay==="foto"){ let y=H*.56+56; const b=ajusta(ctx,s.titulo,s.destaque,W-2*M,250,fT?92:80,48,800,fam); y=escreve(ctx,b,M,y,branco,dest,800,fam); if(s.texto){ const b2=ajusta(ctx,s.texto,"",W-2*M,H-y-150,40,28,400,fam); escreve(ctx,b2,M,y+22,"rgba(255,255,255,.82)",branco,400,fam,1.3); } }
+    else if(lay==="lista"){ const its=(s.itens&&s.itens.length?s.itens:(s.texto||"").split(/[.;]\s*/).filter(Boolean)).slice(0,5);
+      const b=ajusta(ctx,s.titulo,s.destaque,W-2*M,320,fT?118:90,56,800,fam); const bis=its.map(it=>ajusta(ctx,it,"",W-2*M-70,170,fT?60:50,36,600,fam));
+      const altura=b.ls.length*b.tam*1.08+60+bis.reduce((a,x)=>a+x.ls.length*x.tam*1.2+44,0); let y=Math.max(M+30,(H-200-altura)/2+40);
+      y=escreve(ctx,b,M,y,txtCor,txtCor,800,fam)+60;
+      bis.forEach(bi=>{ ctx.fillStyle=txtCor; ctx.globalAlpha=.9; ctx.beginPath(); ctx.arc(M+16,y+bi.tam*.55,13,0,7); ctx.fill(); ctx.globalAlpha=1; y=escreve(ctx,bi,M+64,y,txtCor,txtCor,600,fam,1.2)+44; }); }
+    else if(lay==="numero"){ const num=s.numero||s.destaque||"1"; ctx.font=`900 ${fT?300:240}px "${fam}"`; let tn=fT?300:240; while(ctx.measureText(num).width>W-2*M&&tn>120){ tn-=12; ctx.font=`900 ${tn}px "${fam}"`; } ctx.fillStyle=txtCor; ctx.fillText(num,M,H*.2);
+      let y=H*.2+tn*1.05; const b=ajusta(ctx,s.titulo,"",W-2*M,260,fT?76:64,44,800,fam); y=escreve(ctx,b,M,y,txtCor,txtCor,800,fam); if(s.texto){ const b2=ajusta(ctx,s.texto,"",W-2*M,H-y-160,38,28,400,fam); ctx.globalAlpha=.85; escreve(ctx,b2,M,y+20,txtCor,txtCor,400,fam,1.3); ctx.globalAlpha=1; } }
+    else if(lay==="citacao"){ const b=ajusta(ctx,"“"+s.titulo+"”",s.destaque,W-2*M,H*.5,fT?110:90,56,800,fam); const y0=(H-b.ls.length*b.tam*1.08)/2; escreve(ctx,b,M,y0,branco,dest,800,fam); }
+    else if(lay==="cta"){ let y=H*.46; const b=ajusta(ctx,s.titulo,s.destaque,W-2*M,300,fT?100:84,52,800,fam); y=escreve(ctx,b,M,y,branco,dest,800,fam)+36;
+      const bt=s.texto||$("#cta").value; ctx.font=`700 44px "${fam}"`; const tw=Math.min(W-2*M, ctx.measureText(bt).width+90); ctx.fillStyle=temCor?cor:"#fff"; ctx.beginPath(); ctx.roundRect(M,y,tw,104,52); ctx.fill(); ctx.fillStyle=temCor?corTexto(cor):"#111"; ctx.textBaseline="middle"; ctx.fillText(bt,M+45,y+52,tw-90); ctx.textBaseline="top"; }
+  }
+  // marca: logo, numeração, Ibama
+  if(fase>=5){
+    const lg=imgs[m.logo]; if(lg&&(lay==="capa"||lay==="cta")){ const lw= lay==="cta"?380:250, lh=lg.height*lw/lg.width; ctx.drawImage(lg, lay==="cta"?M:W-M-lw, lay==="cta"?H*.16:M, lw, Math.min(lh, lay==="cta"?260:120)); }
+    const yr=H-150; ctx.font=`600 30px "${fam}"`; ctx.fillStyle= txtCor; ctx.globalAlpha=.75; ctx.textAlign="right"; ctx.fillText(`${i+1}/${n}`, W-M, yr); ctx.textAlign="left";
+    if(i<n-1){ const ax=W-M-90, ay=yr+15; ctx.beginPath(); ctx.moveTo(ax-38,ay-6); ctx.lineTo(ax-16,ay-6); ctx.lineTo(ax-16,ay-16); ctx.lineTo(ax,ay); ctx.lineTo(ax-16,ay+16); ctx.lineTo(ax-16,ay+6); ctx.lineTo(ax-38,ay+6); ctx.fill(); }
+    ctx.globalAlpha=1;
+    if($("#ibama").checked && imgs.ibama){ const iw=W*1960/2160, ih=imgs.ibama.height*iw/imgs.ibama.width; ctx.drawImage(imgs.ibama, W*100/2160, H-H*100/3840-ih, iw, ih); }
+  }
+  ctx.restore();
+}
+
+/* ---------- faixa de slides ---------- */
+function desenhaFaixa(fase=9){
+  const n=C.slides.length; $("#colunas").style.gridTemplateColumns=`repeat(${n},minmax(0,1fr))`;
+  const nm=$("#nomes"); nm.innerHTML=""; const d0=el("div","alto","Slides"); nm.append(d0);
+  PISTAS.forEach(([,t,c])=>{ const d=el("div"); const i=el("i"); i.style.background=css(c); d.append(i,t); nm.append(d); });
+  const cols=$("#colunas"); cols.innerHTML="";
+  C.slides.forEach((s,i)=>{ const col=el("div","col"); const b=el("button","slide-mini"); b.type="button"; b.id="mini"+i; b.setAttribute("aria-pressed",i===sel); b.setAttribute("aria-label","Slide "+(i+1));
+    const cv=el("canvas"); cv.width=W; cv.height=H; b.append(cv); render(cv.getContext("2d"),s,i,n,fase); b.onclick=()=>{ sel=i; desenhaFaixa(fase); grande(fase); if(etapa>=ETAPAS.length) editor(); };
+    col.append(b);
+    const blocos=[[fase>=1?(s.titulo||"").slice(0,24):"","--amarelo"],[fase>=2?LAYOUTS[s.layout]:"","--rosa"],[fase>=4&&s.foto!=null?"foto "+(s.foto+1):(fase>=4?"sem foto":""),"--verde"],[fase>=5?MARCAS[C.marca].nome:"","--coral"]];
+    blocos.forEach(([t,c],k)=>{ const bl=el("div","blk",t); bl.id=`b${k}_${i}`; if(t) bl.style.background=css(c); col.append(bl); });
+    cols.append(col); });
+}
+function grande(fase=9){ render($("#grande").getContext("2d"), C.slides[sel], sel, C.slides.length, fase); }
+
+/* ---------- roteiro (Claude ou modelo) ---------- */
+function roteiroModelo(b){
+  const n=b.n, tema=b.tema.split(/[:.]/)[0].trim()||"Seu próximo carro";
+  const meio=[
+    {tipo:"foto",titulo:"Feito para a sua rotina",destaque:"sua rotina",texto:"Conforto, espaço e tecnologia para todos os trajetos."},
+    {tipo:"lista",titulo:"Por que escolher",itens:["Conforto para o dia a dia","Tecnologia a bordo","Atendimento Grupo IESA"]},
+    {tipo:"citacao",titulo:"Dirigir pode ser mais simples",destaque:"mais simples"},
+    {tipo:"foto",titulo:"Design que chama atenção",destaque:"Design",texto:"Detalhes que você percebe de longe e sente de perto."},
+    {tipo:"lista",titulo:"No test drive você vê",itens:["Como ele responde","O silêncio a bordo","A tecnologia na prática"]},
+    {tipo:"foto",titulo:"Cada detalhe pensado",destaque:"detalhe",texto:"Acabamento, conectividade e segurança em um só carro."}
+  ];
+  const sl=[{tipo:"capa",titulo:tema,destaque:tema.split(" ").slice(-2).join(" "),texto:"Arraste para o lado e conheça"}];
+  for(let i=1;i<n-1;i++) sl.push({...meio[(i-1)%meio.length]});
+  if(b.dados && n>2) sl[n-2]={tipo:"lista",titulo:"Condições",itens:b.dados.split(/\n|;/).map(x=>x.trim()).filter(Boolean).slice(0,4)};
+  sl.push({tipo:"cta",titulo:"Venha sentir de perto",destaque:"sentir",texto:b.cta});
+  return {slides:sl, legenda:`${tema}\n\n${b.cta}.\n\n#${MARCAS[b.marca].nome.replace(/\W/g,"")} #GrupoIESA`};
+}
+let sample=null;
+async function roteiroIA(b, onText){
+  const pedido=`Você é redator de redes sociais de concessionárias do Grupo IESA. Escreva um carrossel de Instagram em português do Brasil.
+Marca: ${MARCAS[b.marca].nome}. Tema: ${b.tema}. Objetivo: ${b.objetivo}. Tom: ${b.tom}. Número de slides: ${b.n}. Chamada final: ${b.cta}.
+Dados obrigatórios (use exatamente como estão, e não invente nenhum outro preço, condição, prazo ou dado técnico): ${b.dados||"nenhum"}.
+Regras: slide 1 é tipo "capa"; o último é tipo "cta" com "texto" igual à chamada final; os do meio variam entre "foto", "lista", "numero" e "citacao".
+Título com no máximo 7 palavras; "destaque" é 1 a 3 palavras que aparecem no título; "texto" com no máximo 22 palavras; "lista" tem "itens" (3 a 4, até 6 palavras cada); "numero" tem "numero" curto (ex.: "100%", "5 anos") só se o número estiver no tema ou nos dados, senão use outro tipo.
+Responda só com JSON: {"slides":[{"tipo":"","titulo":"","destaque":"","texto":"","itens":[],"numero":""}],"legenda":"legenda do post com até 500 caracteres e 3 a 5 hashtags"}`;
+  const r = await sample.json(pedido,{onText,modelTier:"default"});
+  if(!r||!Array.isArray(r.slides)||!r.slides.length) throw new Error("resposta vazia");
+  return r;
+}
+
+/* ---------- pipeline ---------- */
+function briefingAtual(){ return {marca:$("#marca").value,tema:$("#tema").value.trim(),objetivo:$("#objetivo").value,n:+$("#nslides").value,tom:$("#tom").value,cta:$("#cta").value.trim()||"Fale com a gente",dados:$("#dados").value.trim()}; }
+async function gerar(b, comIA){
+  rodando=true; pausado=false; $("#gerar").disabled=true; $("#pausa").disabled=false; $("#pausa").textContent="Pausar"; acoes=0; log=[]; $("#exemplo").textContent="gerando…";
+  totalAcoes = 3 + 1 + b.n*5 + 3 + 2;
+  for(const f of fotos) if(!f.img) f.img=await carrega(f.src);
+  // 0 briefing
+  marcaEtapa(0); palco("Lendo o <em>briefing</em>","Marca, tema, objetivo e dados obrigatórios"); $("#numero").textContent="";
+  $("#info").innerHTML=""; const pi=el("div","stream"); pi.textContent=`marca: ${MARCAS[b.marca].nome}\ntema: ${b.tema}\nobjetivo: ${b.objetivo}\ntom: ${b.tom}\nslides: ${b.n}\nchamada: ${b.cta}\ndados: ${b.dados||"—"}\nfotos: ${fotos.length}`; $("#info").append(pi);
+  registra("briefing-01",`marca ${MARCAS[b.marca].nome} · fonte e cor carregadas`); aponta("briefing-01",$("#marca")); await espera(600);
+  registra("briefing-02",`${b.n} slides · tom ${b.tom.toLowerCase()}`); aponta("briefing-02",$("#nslides")); await espera(500);
+  registra("briefing-03",`${fotos.length} fotos no banco de imagens`); aponta("briefing-03",$("#fotos")); await espera(500);
+  // 1 roteiro
+  marcaEtapa(1); palco("Escrevendo o <em>roteiro</em>","Um texto por slide, gancho na capa e chamada no fim");
+  $("#info").innerHTML=""; const st=el("div","stream"); $("#info").append(st);
+  let r=null;
+  if(comIA && sample){ registra("roteiro-01","escrevendo com o Claude…"); aponta("roteiro-01",st);
+    try{ r=await roteiroIA(b, u=>{ st.textContent=u.text; st.scrollTop=st.scrollHeight; }); }
+    catch(e){ registra("roteiro-01","não deu para usar o Claude agora · usando modelo"); r=null; if(e&&e.code==="rate_limited") toast("Muitos pedidos ao Claude. Usei o roteiro de modelo; tente de novo em alguns minutos."); } }
+  if(!r){ r=roteiroModelo(b); st.textContent=JSON.stringify(r,null,1); }
+  r.slides=r.slides.slice(0,b.n);
+  C={marca:b.marca, slides:r.slides.map(s=>({...s})), legenda:r.legenda||""}; sel=0;
+  desenhaFaixa(0); grande(0);
+  for(let i=0;i<C.slides.length;i++){ sel=i; desenhaFaixa(1); grande(1); registra("roteiro-0"+(i%3+1),`slide ${i+1}: “${C.slides[i].titulo}”`); aponta("roteiro-0"+(i%3+1),document.getElementById("b0_"+i)); await espera(550); }
+  // 2 layout
+  marcaEtapa(2); palco("Escolhendo o <em>layout</em>","Capa forte, ritmo entre foto e texto, chamada no fim");
+  $("#info").innerHTML=""; const il=el("div","stream"); $("#info").append(il);
+  C.slides.forEach((s,i)=>{ const t=s.tipo; s.layout = i===0?"capa": i===C.slides.length-1?"cta": (LAYOUTS[t]&&t!=="capa"&&t!=="cta"?t:"foto"); if(s.layout==="numero"&&!s.numero) s.layout="foto"; });
+  for(let i=0;i<C.slides.length;i++){ sel=i; desenhaFaixa(2); grande(2); il.textContent+=`slide ${i+1} → ${LAYOUTS[C.slides[i].layout]}\n`; registra("layout-0"+(i%2+1),`slide ${i+1}: ${LAYOUTS[C.slides[i].layout].toLowerCase()}`); aponta("layout-0"+(i%2+1),document.getElementById("b1_"+i)); await espera(450); }
+  // 3 tipografia
+  marcaEtapa(3); palco("Ajustando a <em>tipografia</em>","Título no maior tamanho que cabe, sem cortar palavra");
+  $("#info").innerHTML=""; const it=el("div","stream"); it.textContent=`fonte: ${MARCAS[b.marca].fonte} (no lugar da fonte da marca)\n`; $("#info").append(it);
+  const cx=document.createElement("canvas").getContext("2d");
+  for(let i=0;i<C.slides.length;i++){ sel=i; const fam=MARCAS[b.marca].fonte; const t=ajusta(cx,C.slides[i].titulo,"",W-168,300,150,48,800,fam); desenhaFaixa(3); grande(3);
+    it.textContent+=`slide ${i+1}: título ${t.tam}px · ${t.ls.length} linha(s)\n`; registra("tipo-0"+(i%2+1),`slide ${i+1}: título ${t.tam}px, ${t.ls.length} linha(s)`); aponta("tipo-0"+(i%2+1),document.getElementById("mini"+i)); await espera(380); }
+  // 4 imagens
+  marcaEtapa(4); palco("Escolhendo as <em>imagens</em>","Foto inteira na capa, recorte que preenche sem distorcer");
+  $("#info").innerHTML=""; const ii=el("div","stream"); $("#info").append(ii);
+  let k=0; for(let i=0;i<C.slides.length;i++){ const s=C.slides[i]; const usa = ["capa","foto","citacao","cta","numero"].includes(s.layout) && fotos.length; s.foto = usa ? (k++)%fotos.length : null; sel=i; desenhaFaixa(4); grande(4);
+    ii.textContent+= `slide ${i+1}: ${s.foto!=null?"foto "+(s.foto+1)+" · recorte 4:5":"sem foto (fundo da marca)"}\n`; registra("imagem-0"+(i%3+1), s.foto!=null?`slide ${i+1}: foto ${s.foto+1}, recorte 4:5`:`slide ${i+1}: fundo sólido`); aponta("imagem-0"+(i%3+1),document.getElementById("b2_"+i)); await espera(420); }
+  // 5 cor e marca
+  marcaEtapa(5); palco("Aplicando <em>cor e marca</em>","Cor da marca nos destaques, logo na capa e no fim, numeração e selo Ibama");
+  $("#info").innerHTML=""; const ic=el("div","stream"); $("#info").append(ic);
+  for(let i=0;i<C.slides.length;i++){ sel=i; desenhaFaixa(5); grande(5); ic.textContent+=`slide ${i+1}: cor ${MARCAS[b.marca].cor}${$("#ibama").checked?" · Ibama":""}${C.slides[i].layout==="capa"||C.slides[i].layout==="cta"?" · logo":""}\n`;
+    registra("cor-0"+(i%2+1),`slide ${i+1}: destaque em ${MARCAS[b.marca].cor}`); aponta("cor-0"+(i%2+1),document.getElementById("b3_"+i)); await espera(380); }
+  // 6 pronto
+  marcaEtapa(6); palco("Pronto para <em>exportar</em>","PNG 1080×1350 (4:5), um arquivo por slide, em um .zip");
+  registra("export-01",`${C.slides.length} slides prontos · 1080×1350`); aponta("export-01",$("#exportar")); await espera(400);
+  registra("export-02","legenda do post pronta");
+  terminar();
+  try{ localStorage.setItem("gs_carrossel", JSON.stringify({C,b})); }catch(e){}
+}
+function terminar(){ rodando=false; marcaEtapa(ETAPAS.length); sel=0; desenhaFaixa(); grande(); editor(); $("#gerar").disabled=false; $("#pausa").disabled=true; $("#exemplo").textContent="pronto"; $("#numero").textContent=C.slides.length+" slides";
+  Object.values(cursores).forEach(c=>c.style.opacity=0); palco("Carrossel <em>pronto</em>","Toque num slide para editar o texto, o layout ou a foto"); }
+function editor(){
+  const s=C.slides[sel], inf=$("#info"); inf.innerHTML="";
+  const ed=el("div","editar");
+  const campo=(rot,id,val,area,fn)=>{ const d=el("div"); const l=el("label","rot",rot); l.htmlFor=id; const i=el(area?"textarea":"input"); if(!area) i.type="text"; i.id=id; i.value=val||""; if(area) i.style.minHeight="56px"; i.oninput=()=>{ fn(i.value); grande(); atualizaMini(); }; d.append(l,i); ed.append(d); };
+  ed.append(el("h3",null,"Slide "+(sel+1)));
+  campo("Título","ed-t",s.titulo,false,v=>s.titulo=v);
+  campo("Palavras em destaque","ed-d",s.destaque,false,v=>s.destaque=v);
+  if(s.layout==="lista") campo("Itens (um por linha)","ed-i",(s.itens||[]).join("\n"),true,v=>s.itens=v.split("\n").filter(Boolean));
+  else campo("Texto","ed-x",s.texto,true,v=>s.texto=v);
+  if(s.layout==="numero") campo("Número","ed-n",s.numero,false,v=>s.numero=v);
+  const d2=el("div","duas");
+  const sl=el("select"); sl.id="ed-l"; Object.entries(LAYOUTS).forEach(([k,v])=>{ const o=el("option",null,v); o.value=k; sl.append(o); }); sl.value=s.layout; sl.onchange=()=>{ s.layout=sl.value; desenhaFaixa(); grande(); editor(); };
+  const sf=el("select"); sf.id="ed-f"; const o0=el("option",null,"Sem foto"); o0.value=""; sf.append(o0); fotos.forEach((f,i)=>{ const o=el("option",null,"Foto "+(i+1)); o.value=i; sf.append(o); }); sf.value=s.foto??""; sf.onchange=()=>{ s.foto= sf.value===""?null:+sf.value; desenhaFaixa(); grande(); };
+  const w1=el("div"); const l1=el("label","rot","Layout"); l1.htmlFor="ed-l"; w1.append(l1,sl); const w2=el("div"); const l2=el("label","rot","Foto"); l2.htmlFor="ed-f"; w2.append(l2,sf); d2.append(w1,w2); ed.append(d2);
+  if(C.legenda){ const lp=el("div"); lp.append(el("label","rot","Legenda do post"), el("div","legenda-post",C.legenda)); ed.append(lp); }
+  inf.append(ed);
+}
+function atualizaMini(){ const b=document.getElementById("mini"+sel); if(b) render(b.querySelector("canvas").getContext("2d"),C.slides[sel],sel,C.slides.length); const t=document.getElementById("b0_"+sel); if(t) t.textContent=(C.slides[sel].titulo||"").slice(0,24); }
+
+/* ---------- controles ---------- */
+[1,2,4].forEach(v=>{ const b=el("button","vel",v+"×"); b.type="button"; b.setAttribute("aria-pressed",v===1); b.onclick=()=>{ vel=v; document.querySelectorAll(".vel").forEach(x=>x.setAttribute("aria-pressed",x===b)); }; $("#vels").append(b); });
+$("#pausa").onclick=()=>{ pausado=!pausado; $("#pausa").textContent=pausado?"Continuar":"Pausar"; if(!pausado&&esperaPausa){ const r=esperaPausa; esperaPausa=null; r(); } };
+$("#briefing").onsubmit=e=>{ e.preventDefault(); if(rodando) return; const b=briefingAtual(); if(!b.tema){ toast("Escreva o tema do carrossel."); $("#tema").focus(); return; } gerar(b,true); };
+function toast(m){ const t=$("#toast"); t.textContent=m; t.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>t.hidden=true,3500); }
+$("#copiar").onclick=async()=>{ const txt=C&&C.legenda||""; if(!txt){ toast("Ainda não tem legenda."); return; } try{ await navigator.clipboard.writeText(txt); toast("Legenda copiada."); }catch(e){ editor(); toast("Selecione e copie a legenda abaixo do editor."); } };
+let downloads=null;
+$("#exportar").onclick=async()=>{
+  if(!C||rodando){ toast("Espere o carrossel terminar."); return; }
+  const btn=$("#exportar"); btn.disabled=true;
+  try{
+    const zip=new JSZip(); const cv=document.createElement("canvas"); cv.width=W; cv.height=H; const ctx=cv.getContext("2d");
+    for(let i=0;i<C.slides.length;i++){ render(ctx,C.slides[i],i,C.slides.length); const blob=await new Promise(r=>cv.toBlob(r,"image/png")); zip.file(`slide_${String(i+1).padStart(2,"0")}.png`,blob); }
+    if(C.legenda) zip.file("legenda.txt", C.legenda);
+    const z=await zip.generateAsync({type:"blob"}); const nome=`carrossel_${C.marca}_${new Date().toISOString().slice(0,10)}.zip`;
+    if(!downloads){ toast("Baixar arquivos não está disponível nesta visualização. Abra a página no claude.ai."); }
+    else { await downloads.save({filename:nome,data:z}); toast("Carrossel baixado: "+nome); }
+  }catch(e){ toast(e&&e.code==="declined"?"Download cancelado.":"Não deu para baixar: "+(e.message||e.code)); }
+  btn.disabled=false;
+};
+
+/* ---------- início: exemplo já montado ---------- */
+(async()=>{
+  for(const k of ["logo_grupo_iesa","logo_bmw","logo_volvo","ibama"]) imgs[k]=await carrega(A[k]);
+  for(const f of fotos) f.img=await carrega(f.src);
+  desenhaFotos();
+  try{ await document.fonts.load('800 80px "Figtree"'); await document.fonts.load('400 40px "Figtree"'); await document.fonts.load('800 80px "Manrope"'); }catch(e){}
+  let salvo=null; try{ salvo=JSON.parse(localStorage.getItem("gs_carrossel")||"null"); }catch(e){}
+  const b = salvo&&salvo.b || briefingAtual();
+  if(salvo&&salvo.C){ C=salvo.C; Object.entries({marca:b.marca,tema:b.tema,cta:b.cta,dados:b.dados||""}).forEach(([k,v])=>$("#"+k).value=v); $("#exemplo").textContent="último carrossel"; }
+  else { const r=roteiroModelo(b); C={marca:b.marca,slides:r.slides,legenda:r.legenda}; let k=0;
+    C.slides.forEach((s,i)=>{ s.layout= i===0?"capa": i===C.slides.length-1?"cta": s.tipo; s.foto= ["capa","foto","citacao","cta","numero"].includes(s.layout)?(k++)%fotos.length:null; }); }
+  acoes=0; terminar(); $("#exemplo").textContent= salvo?"último carrossel":"exemplo";
+  const c=window.claude;
+  if(c&&c.use){ const [s,d]=await Promise.all([c.use("sample"),c.use("downloads")]); sample=s; downloads=d; }
+  $("#aviso-ia").innerHTML = sample ? "O roteiro é escrito pelo Claude a partir do briefing. Só entram os dados que você informar." : "<b>Sem o Claude nesta visualização:</b> o roteiro sai de um modelo pronto e você edita os textos depois.";
+  $("#aviso-ia").append(" Prévia com fonte parecida com a da marca.");
+})();
+</script>
