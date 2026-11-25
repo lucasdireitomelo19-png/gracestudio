@@ -1,0 +1,410 @@
+<title>Grace Studio Modo Editor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: ilha de edição escura (tema único, de propósito). Topo = etapas; meio = prévia | etapa ativa | agentes; base = timeline multipista. */
+:root{
+  color-scheme:dark;
+  --fundo:#0C0A22; --painel:#151239; --painel2:#1C1850; --linha:#2E2970; --texto:#EEEBFF; --mudo:#9D97D8;
+  --coral:#FF7A45; --ciano:#45D6FF; --amarelo:#FFD24A; --azul:#7C8CFF; --verde:#4ADE9B; --rosa:#FF5FA8; --corte:#FF4D5E;
+  --f-etapa:"Anton","Impact",sans-serif; --f-texto:"Inter",system-ui,sans-serif; --f-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{background:var(--fundo)}
+body{color:var(--texto);font-family:var(--f-texto);font-size:13px;line-height:1.45;
+  padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));padding-block:12px 24px}
+.app{max-width:1400px;margin:0 auto;border-radius:16px;padding:2px;background:linear-gradient(120deg,var(--rosa),var(--azul) 45%,var(--coral))}
+.dentro{background:var(--fundo);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden}
+.barra{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700}
+.logo i{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,var(--rosa),var(--coral));display:inline-block}
+.logo small{font-family:var(--f-mono);font-weight:400;color:var(--mudo)}
+.etapas{display:flex;flex-wrap:wrap;gap:4px}
+.etapa{font:600 12px var(--f-texto);padding:4px 10px;border-radius:999px;border:1px solid var(--linha);background:var(--painel);color:var(--mudo);cursor:pointer}
+.etapa.feita{color:var(--texto)}
+.etapa.feita::before{content:"✓ ";color:var(--verde)}
+.etapa.ativa{background:var(--amarelo);color:#1A1440;border-color:var(--amarelo)}
+.contador{font-family:var(--f-mono);font-size:13px;color:var(--coral);font-weight:600;font-variant-numeric:tabular-nums}
+.contador span{color:var(--mudo);font-weight:400}
+.meio{display:grid;grid-template-columns:minmax(150px,230px) minmax(0,1fr) minmax(220px,300px);gap:10px;min-height:340px}
+@media (max-width:900px){.meio{grid-template-columns:minmax(0,1fr)}}
+.caixa{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:10px;min-width:0;position:relative}
+.previa{display:flex;flex-direction:column;gap:6px;align-items:center}
+.previa .rot{align-self:flex-start;font:600 10px var(--f-mono);text-transform:uppercase;letter-spacing:.08em;background:var(--painel2);padding:2px 6px;border-radius:4px;color:var(--ciano)}
+.tela{width:100%;max-width:200px;aspect-ratio:9/16;border-radius:10px;overflow:hidden;background:#000;position:relative}
+.tela video{width:100%;height:100%;object-fit:cover;display:block}
+.palco h2{font-family:var(--f-etapa);font-weight:400;font-size:clamp(26px,3.4vw,42px);line-height:1;margin:0;letter-spacing:.01em;text-transform:uppercase}
+.palco h2 em{font-style:normal;color:var(--amarelo)}
+.palco .sub{color:var(--mudo);margin:2px 0 10px}
+.palco .numero{position:absolute;right:14px;top:10px;text-align:right;font-family:var(--f-mono);font-weight:600;font-size:clamp(24px,3vw,34px);font-variant-numeric:tabular-nums}
+.palco .numero small{display:block;font-size:11px;font-weight:400;color:var(--mudo)}
+.corpo{min-height:250px}
+/* corte */
+.transc{font-size:15px;line-height:2;max-height:300px;overflow:auto;padding-right:4px}
+.clip-rot{font:600 10px var(--f-mono);color:var(--ciano);margin-right:6px;vertical-align:1px}
+.pal{transition:opacity .3s,color .3s}
+.pal.fora{color:var(--mudo)}
+.pal.fora.cortado{text-decoration:line-through;text-decoration-color:var(--corte);opacity:.45}
+.pausa{font:600 11px var(--f-mono);background:var(--corte);color:#fff;border-radius:4px;padding:1px 5px;margin:0 3px;white-space:nowrap;transition:opacity .3s,transform .3s;display:inline-block}
+.pausa.cortado{opacity:.25;transform:scale(.85);text-decoration:line-through}
+/* legenda */
+.grande{height:130px;display:flex;align-items:center;justify-content:center;font-size:clamp(30px,4.6vw,56px);text-align:center;text-shadow:0 4px 18px rgba(0,0,0,.5)}
+.grande .w{opacity:0;transition:opacity .2s;margin:0 .14em;font-weight:300}
+.grande .w.b{font-weight:700}
+.grande .w.on{opacity:1}
+.linhas{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 14px;font-size:12px;max-height:150px;overflow:auto}
+.linhas div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.linhas code{font-family:var(--f-mono);color:var(--amarelo);margin-right:6px}
+.linhas b{font-weight:700}
+/* zoom */
+.grafico{width:100%;height:240px;display:block}
+/* cor */
+.cartoes{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.cartao{background:var(--painel2);border-radius:10px;padding:12px;border:1px solid var(--linha);opacity:.25;transition:opacity .4s}
+.cartao.on{opacity:1}
+.cartao h3{margin:0 0 4px;font-size:14px}
+.cartao p{margin:0;color:var(--mudo)}
+.cartela-grande{font-family:var(--f-etapa);font-size:clamp(34px,5vw,64px);text-align:center;line-height:1;margin-top:30px;min-height:70px}
+.cartela-sub{text-align:center;color:var(--mudo);font-size:16px;min-height:24px}
+.lista-cartelas{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:24px}
+.lista-cartelas span{font:600 11px var(--f-mono);background:var(--painel2);border:1px solid var(--rosa);color:var(--rosa);padding:3px 8px;border-radius:999px}
+/* som */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{font:600 11px var(--f-mono);padding:3px 8px;border-radius:999px;background:var(--painel2);border:1px solid var(--linha)}
+/* exportar */
+.export{display:flex;flex-direction:column;gap:12px;margin-top:20px}
+.trilho{height:14px;border-radius:999px;background:var(--painel2);overflow:hidden;border:1px solid var(--linha)}
+.trilho i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--rosa),var(--coral));transition:width .25s}
+.specs{display:flex;flex-wrap:wrap;gap:6px}
+.btn{font:600 13px var(--f-texto);cursor:pointer;border-radius:8px;padding:8px 14px;border:1px solid var(--linha);background:var(--painel2);color:var(--texto)}
+.btn.prim{background:var(--coral);border-color:var(--coral);color:#1A1440}
+.btn:focus-visible,.etapa:focus-visible{outline:2px solid var(--ciano);outline-offset:2px}
+/* agentes */
+.agentes h3{margin:0;font-size:14px;display:flex;justify-content:space-between;align-items:baseline}
+.agentes h3 span{font:400 11px var(--f-mono);color:var(--coral)}
+.quadrados{display:flex;gap:3px;margin:8px 0 10px;flex-wrap:wrap}
+.quadrados i{width:12px;height:12px;border-radius:3px;opacity:.35;transition:opacity .2s}
+.quadrados i.on{opacity:1}
+.log{display:flex;flex-direction:column;gap:4px;font-size:12px;max-height:280px;overflow:hidden}
+.log div{display:grid;grid-template-columns:78px minmax(0,1fr);gap:8px;animation:entra .25s ease-out}
+.log code{font:600 11px var(--f-mono)}
+.log span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@keyframes entra{from{opacity:0;transform:translateY(-4px)}}
+/* timeline */
+.tl{display:grid;grid-template-columns:70px minmax(0,1fr);gap:0 8px;padding:8px 10px}
+.tl .nomes{display:flex;flex-direction:column;gap:3px;padding-top:18px}
+.tl .nomes div{height:26px;display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600}
+.tl .nomes i{width:9px;height:9px;border-radius:3px;display:inline-block}
+.pistas{position:relative;display:flex;flex-direction:column;gap:3px;cursor:pointer}
+.regua{height:15px;position:relative;font:10px var(--f-mono);color:var(--mudo)}
+.regua span{position:absolute;top:0;transform:translateX(-50%)}
+.pista{height:26px;position:relative;background:rgba(255,255,255,.03);border-radius:4px;overflow:hidden}
+.bl{position:absolute;top:2px;bottom:2px;border-radius:3px;overflow:hidden;transition:left .6s,width .6s,opacity .3s}
+.bl.video{background-color:#24306A;background-repeat:no-repeat;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}
+.bl.bruto{background:#2B3A7A;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);font:600 9px var(--f-mono);color:var(--ciano);padding:2px 4px}
+.bl.pz{background:repeating-linear-gradient(135deg,var(--corte) 0 4px,rgba(255,77,94,.35) 4px 8px);border-radius:2px;top:0;bottom:0}
+.bl.leg{background:var(--amarelo);opacity:.85}
+.bl.card{background:var(--rosa)}
+.bl.ins{box-shadow:inset 0 0 0 2px var(--coral)}
+.bl.fx{background:var(--coral);width:4px!important}
+.pista canvas{position:absolute;inset:0;width:100%;height:100%}
+.cabeca{position:absolute;top:0;bottom:0;width:2px;background:var(--texto);left:0;pointer-events:none;box-shadow:0 0 6px rgba(255,255,255,.6)}
+.cabeca::before{content:"";position:absolute;top:0;left:-5px;border:6px solid transparent;border-top-color:var(--texto)}
+.transporte{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:0 10px 6px}
+.transporte .grupo{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.tempo{font-family:var(--f-mono);font-variant-numeric:tabular-nums;color:var(--mudo)}
+.vel{font:600 12px var(--f-mono);padding:4px 8px;border-radius:6px;border:1px solid var(--linha);background:var(--painel);color:var(--mudo);cursor:pointer}
+.vel[aria-pressed="true"]{color:var(--fundo);background:var(--ciano);border-color:var(--ciano)}
+.tl-scroll{overflow-x:auto}
+.tl-scroll .tl{min-width:760px}
+/* cursores dos agentes */
+.cursor{position:absolute;left:0;top:0;pointer-events:none;z-index:5;transition:transform .45s cubic-bezier(.3,.7,.2,1),opacity .3s;display:flex;align-items:flex-start;gap:2px}
+.cursor svg{width:14px;height:14px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
+.cursor b{font:600 10px var(--f-mono);padding:1px 5px;border-radius:4px;color:#140F33;margin-top:10px}
+@media (prefers-reduced-motion:reduce){.cursor{display:none}.log div{animation:none}}
+.nota{color:var(--mudo);font-size:12px;max-width:1400px;margin:10px auto 0}
+</style>
+
+<div class="app"><div class="dentro" id="app">
+  <div class="barra">
+    <div class="logo"><i></i>Modo Editor <small id="proj"></small></div>
+    <div class="etapas" id="etapas" role="tablist" aria-label="Etapas da edição"></div>
+    <div class="contador" id="contador">0<span>/0 ações</span></div>
+  </div>
+  <div class="meio">
+    <div class="caixa previa"><span class="rot" id="rot-previa">+ corte</span>
+      <div class="tela"><video id="video" src="proxy.mp4" muted playsinline preload="auto"></video></div>
+      <span class="tempo" id="tempo-previa">00:00,0</span>
+    </div>
+    <div class="caixa palco" id="palco"><h2 id="titulo"></h2><p class="sub" id="subtitulo"></p><div class="numero" id="numero"></div><div class="corpo" id="corpo"></div></div>
+    <div class="caixa agentes"><h3>Agentes <span id="ativos"></span></h3><div class="quadrados" id="quadrados"></div><div class="log" id="log"></div></div>
+  </div>
+  <div class="caixa" style="padding:0">
+    <div class="tl-scroll"><div class="tl">
+      <div class="nomes" id="nomes"></div>
+      <div class="pistas" id="pistas"><div class="regua" id="regua"></div></div>
+    </div></div>
+    <div class="transporte">
+      <div class="grupo">
+        <button class="btn" id="play" type="button">Pausar edição</button>
+        <button class="btn" id="reini" type="button">Recomeçar</button>
+        <span class="tempo">Velocidade</span><span id="vels"></span>
+      </div>
+      <div class="grupo"><button class="btn prim" id="assistir" type="button" hidden>Assistir vídeo final com som</button><span class="tempo" id="tempo">00:00,0 / 00:00,0</span></div>
+    </div>
+  </div>
+</div></div>
+<p class="nota">Replay da edição real do vídeo BYD feita pelo motor do Grace Studio: as pausas, legendas, zooms, cartelas e sons são os que foram para o arquivo final. A prévia é uma versão leve; o arquivo entregue é 2K, 60 fps, 50 Mbps.</p>
+
+<script>
+const D = __DADOS__;
+const $ = s => document.querySelector(s);
+const el = (tag, cls, txt) => { const e=document.createElement(tag); if(cls) e.className=cls; if(txt!=null) e.textContent=txt; return e; };
+const fmt = t => { t=Math.max(0,t); const m=Math.floor(t/60), s=t-m*60; return String(m).padStart(2,"0")+":"+s.toFixed(1).padStart(4,"0").replace(".",","); };
+const num = (v,c=1) => v.toFixed(c).replace(".",",");
+const reduz = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const ETAPAS=[["corte","Corte"],["legenda","Legenda"],["zoom","Zoom"],["cor","Cor"],["cards","Cards"],["som","Som"],["exportar","Exportar"]];
+const PISTAS=[["cards","Cards","--rosa"],["video","Vídeo","--ciano"],["legenda","Legenda","--amarelo"],["voz","Voz","--azul"],["musica","Música","--verde"],["efeitos","Efeitos","--coral"]];
+const COR_AG={corte:"--corte",legenda:"--amarelo",zoom:"--ciano",cor:"--verde",cards:"--rosa",som:"--coral",export:"--azul"};
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const Dfim = D.fim_cortes;
+
+/* ---------- monta a estrutura ---------- */
+$("#proj").textContent = D.nome+" · "+D.marca;
+ETAPAS.forEach(([id,n],i)=>{ const b=el("button","etapa",n); b.type="button"; b.dataset.id=id; b.setAttribute("role","tab"); b.onclick=()=>pular(i); $("#etapas").append(b); });
+const QTD_AG=14;
+for(let i=0;i<QTD_AG;i++){ const q=el("i"); q.style.background=css(Object.values(COR_AG)[i%7]); $("#quadrados").append(q); }
+$("#ativos").textContent=QTD_AG+" ativos";
+const pista={};
+PISTAS.forEach(([id,n,c])=>{ const d=el("div"); const i=el("i"); i.style.background=css(c); d.append(i,n); $("#nomes").append(d);
+  const p=el("div","pista"); p.dataset.id=id; $("#pistas").append(p); pista[id]=p; });
+const cab=el("div","cabeca"); $("#pistas").append(cab);
+function regua(total){ const r=$("#regua"); r.innerHTML=""; const passo= total>60?10:5; for(let t=0;t<=total;t+=passo){ const s=el("span",null,fmt(t).slice(0,5)); s.style.left=(t/total*100)+"%"; r.append(s);} }
+[1,2,4].forEach(v=>{ const b=el("button","vel",v+"×"); b.type="button"; b.dataset.v=v; b.onclick=()=>{vel=v; document.querySelectorAll(".vel").forEach(x=>x.setAttribute("aria-pressed",x===b));}; $("#vels").append(b); });
+let vel=1; document.querySelector(".vel").setAttribute("aria-pressed","true");
+
+/* ---------- cursores dos agentes ---------- */
+const cursores={};
+function cursor(nome){
+  if(cursores[nome]) return cursores[nome];
+  const c=el("div","cursor"); const tipo=nome.split("-")[0];
+  c.innerHTML='<svg viewBox="0 0 14 14"><path d="M1 1 L1 12 L4.5 8.8 L7 13 L9 12 L6.6 7.9 L11 7.6 Z" fill="#fff" stroke="#140F33" stroke-width="1"/></svg>';
+  const b=el("b",null,nome); b.style.background=css(COR_AG[tipo]||"--ciano"); c.append(b);
+  c.style.transform="translate(40vw,200px)"; $("#app").append(c); cursores[nome]=c; return c;
+}
+function aponta(nome, alvo){
+  if(reduz||!alvo) return; const app=$("#app").getBoundingClientRect(), r=alvo.getBoundingClientRect();
+  if(!r.width&&!r.height) return;
+  const cu=cursor(nome); cu.style.opacity=1; cu.style.transform=`translate(${r.left-app.left+Math.min(r.width*0.6,40)}px,${r.top-app.top+r.height*0.5}px)`;
+}
+
+/* ---------- estado e desenho ---------- */
+let M;
+function novoModelo(){ return {etapa:0, acoes:0, log:[], fase:"bruto", dur:D.bruto_total, cortados:new Set(), legs:0, zooms:0, cor:0, cards:0, som:new Set(), exp:0, pronto:false, foco:0}; }
+function addLog(ag,msg){ M.log.unshift([ag,msg]); if(M.log.length>40) M.log.pop(); M.acoes++; }
+
+// ----- palco por etapa
+function palcoCorte(){
+  $("#titulo").innerHTML="Tirando as <em>pausas</em>"; $("#subtitulo").textContent="Cada silêncio e cada take repetido sai da timeline";
+  const c=$("#corpo"); c.innerHTML=""; const tr=el("div","transc"); c.append(tr);
+  D.clipes.forEach((cl,ci)=>{ tr.append(el("span","clip-rot",cl.arq));
+    cl.toks.forEach((tk,j)=>{ const id=`t${ci}_${j}`;
+      if(tk.p!=null){ const s=el("span","pausa","pausa "+num(tk.p)+" s"); s.id=id; tr.append(s," "); }
+      else { const s=el("span","pal"+(tk.k?"":" fora"),tk.w); s.id=id; tr.append(s," "); } });
+    tr.append(el("br")); });
+}
+function palcoLegenda(){
+  $("#titulo").innerHTML="Escrevendo a <em>legenda</em>"; $("#subtitulo").textContent="Palavra por palavra, no tempo da fala · fonte fina, destaque em negrito";
+  const c=$("#corpo"); c.innerHTML=""; const g=el("div","grande"); g.id="grande"; c.append(g); const l=el("div","linhas"); l.id="linhas"; c.append(l);
+}
+function palcoZoom(){
+  $("#titulo").innerHTML="Dando <em>zoom</em> na fala"; $("#subtitulo").textContent="Punch-in quando a frase pesa · inserts recortados do 4K";
+  $("#corpo").innerHTML='<svg class="grafico" id="graf" viewBox="0 0 600 240" preserveAspectRatio="none"></svg>';
+}
+function palcoCor(){
+  $("#titulo").innerHTML="Acertando a <em>cor</em>"; $("#subtitulo").textContent="Regras da marca antes de qualquer filtro";
+  const lut = D.lut ? D.lut.id.replace(/_/g," ")+" "+D.lut.intensidade+"%" : "Cor original";
+  const c=$("#corpo"); c.innerHTML=""; const g=el("div","cartoes"); c.append(g);
+  [["Análise dos 15 planos","Exposição e balanço de branco conferidos plano a plano."],
+   [lut, D.lut?"LUT aplicado com a força pedida.":"Regra "+D.marca+": sem LUT e sem correção de cor."],
+   ["Selo Ibama","Template Ibama aplicado no vídeo inteiro."]].forEach(([h,p],i)=>{ const k=el("div","cartao"); k.id="cor"+i; k.append(el("h3",null,h),el("p",null,p)); g.append(k); });
+}
+function palcoCards(){
+  $("#titulo").innerHTML="Montando as <em>cartelas</em>"; $("#subtitulo").textContent="Título com letras entrando em fade, na fonte da marca";
+  const c=$("#corpo"); c.innerHTML=""; c.append(el("div","cartela-grande"),el("div","cartela-sub")); const l=el("div","lista-cartelas"); l.id="lcart"; c.append(l);
+  c.querySelector(".cartela-grande").id="cg"; c.querySelector(".cartela-sub").id="cs";
+}
+function palcoSom(){
+  $("#titulo").innerHTML="Mixando o <em>som</em>"; $("#subtitulo").textContent="Voz só da locução, trilha sem direitos autorais, efeitos nos cortes";
+  const c=$("#corpo"); c.innerHTML=""; const ch=el("div","chips"); ch.id="chips"; c.append(ch);
+}
+function palcoExport(){
+  $("#titulo").innerHTML="Exportando em <em>2K</em>"; $("#subtitulo").textContent=D.saida.arquivo;
+  const c=$("#corpo"); c.innerHTML=`<div class="export"><div class="trilho"><i id="barra"></i></div><div class="specs"></div><div id="fim"></div></div>`;
+  [D.saida.res,D.saida.fps+" fps",D.saida.bitrate+" CBR","H.264",fmt(D.dur)].forEach(s=>c.querySelector(".specs").append(el("span","chip",s)));
+}
+const PALCOS=[palcoCorte,palcoLegenda,palcoZoom,palcoCor,palcoCards,palcoSom,palcoExport];
+
+// ----- timeline
+function desenhaVideo(){
+  const p=pista.video; p.innerHTML="";
+  if(M.fase==="bruto"){
+    regua(D.bruto_total); let x=0;
+    D.clipes.forEach((cl,ci)=>{ const b=el("div","bl bruto",cl.arq); b.style.left=(x/D.bruto_total*100)+"%"; b.style.width=(cl.dur/D.bruto_total*100)+"%"; p.append(b);
+      // regiões cortadas (pausas e falas fora)
+      let prevA=0;
+      cl.toks.forEach((tk,j)=>{ const id=`t${ci}_${j}`; if(!M.cortados.has(id)) { if(tk.a!=null) prevA=tk.a; return; }
+        let a,d; if(tk.p!=null){ const prox=cl.toks.slice(j+1).find(t=>t.a!=null); const fimP= prox?prox.a:cl.dur; a=fimP-tk.p; d=tk.p; } else { a=tk.a; const prox=cl.toks.slice(j+1).find(t=>t.a!=null); d=Math.max(.15,(prox?prox.a:a+.4)-a); }
+        const z=el("div","bl pz"); z.style.left=((x+a)/D.bruto_total*100)+"%"; z.style.width=(d/D.bruto_total*100)+"%"; p.append(z); });
+      x+=cl.dur; });
+  } else {
+    regua(D.dur);
+    const fw = 26*54/96;
+    D.segs.forEach(s=>{ const b=el("div","bl video"+(s.tipo==="insert"?" ins":"")); b.style.left=(s.t0/D.dur*100)+"%"; b.style.width=((s.t1-s.t0)/D.dur*100)+"%";
+      b.style.backgroundImage="url(filme.jpg)"; b.style.backgroundSize=(D.n_quadros*fw)+"px 22px"; b.style.backgroundPosition=(-(s.t0/D.passo_filme)*fw)+"px 0"; b.style.backgroundRepeat="repeat-x"; b.id="seg"+s.i; p.append(b); });
+    if(D.encerramento){ const b=el("div","bl video"); b.style.left=(Dfim/D.dur*100)+"%"; b.style.width=((D.dur-Dfim)/D.dur*100)+"%"; b.style.background="#000"; b.title="Encerramento"; p.append(b); }
+  }
+}
+function onda(id, cor, ate){
+  const p=pista[id]; let cv=p.querySelector("canvas"); if(!cv){ cv=el("canvas"); p.append(cv); }
+  const r=p.getBoundingClientRect(), dpr=devicePixelRatio||1; cv.width=Math.max(1,r.width*dpr); cv.height=r.height*dpr;
+  const g=cv.getContext("2d"); g.clearRect(0,0,cv.width,cv.height); if(ate<=0) return;
+  const a=D.ondas[id], n=a.length, h=cv.height, w=cv.width; g.fillStyle=css(cor);
+  for(let i=0;i<n*ate;i++){ const v=Math.max(.04,a[i])*h*.9; g.fillRect(i/n*w, (h-v)/2, Math.max(1,w/n-.5), v); }
+}
+function desenhaPistas(){
+  desenhaVideo();
+  ["legenda","cards","efeitos"].forEach(k=>pista[k].querySelectorAll(".bl").forEach(b=>b.remove()));
+  const T = M.fase==="bruto" ? D.bruto_total : D.dur;
+  D.legendas.slice(0,M.legs).forEach((l,i)=>{ const b=el("div","bl leg"); b.id="leg"+i; b.style.left=(l.a/T*100)+"%"; b.style.width=(Math.max(.25,l.b-l.a)/T*100)+"%"; b.style.top=(i%2?13:2)+"px"; b.style.bottom=(i%2?2:13)+"px"; pista.legenda.append(b); });
+  D.cartelas.slice(0,M.cards).forEach((c,i)=>{ const b=el("div","bl card"); b.id="card"+i; b.style.left=(c.a/T*100)+"%"; b.style.width=((c.b-c.a)/T*100)+"%"; pista.cards.append(b); });
+  onda("voz","--azul", M.fase==="bruto"?0:1);
+  onda("musica","--verde", M.som.has("trilha")?1:0);
+  onda("efeitos","--coral", M.som.has("sfx")?1:0);
+  D.segs.filter(s=>s.tipo==="insert").forEach((s,i)=>{ if(!M.som.has("flare"+i)) return; const b=el("div","bl fx"); b.id="fx"+i; b.style.left=(s.t0/T*100)+"%"; pista.efeitos.append(b); });
+}
+function desenhaLog(){
+  const l=$("#log"); l.innerHTML="";
+  M.log.slice(0,16).forEach(([ag,msg])=>{ const d=el("div"); const c=el("code",null,ag); c.style.color=css(COR_AG[ag.split("-")[0]]||"--ciano"); d.append(c,el("span",null,msg)); l.append(d); });
+  $("#contador").innerHTML=""; $("#contador").append(String(M.acoes)); const s=el("span",null,"/"+PASSOS.length+" ações"); $("#contador").append(s);
+  const ativos=$("#quadrados").children; for(let i=0;i<ativos.length;i++) ativos[i].classList.toggle("on", i<=M.acoes%QTD_AG || M.pronto);
+}
+function desenhaEtapas(){
+  document.querySelectorAll(".etapa").forEach((b,i)=>{ b.classList.toggle("ativa",i===M.etapa&&!M.pronto); b.classList.toggle("feita",i<M.etapa||M.pronto); b.setAttribute("aria-selected",i===M.etapa); });
+  $("#rot-previa").textContent="+ "+ETAPAS[M.etapa][1].toLowerCase();
+}
+function foco(t){ M.foco=t; const v=$("#video"); if(v.readyState>=1 && !tocando){ try{ v.currentTime=Math.min(t,D.dur-.05);}catch(e){} } $("#tempo-previa").textContent=fmt(t); cab.style.left=(t/(M.fase==="bruto"?D.bruto_total:D.dur)*100)+"%"; }
+
+/* ---------- roteiro de ações (gerado dos dados reais) ---------- */
+const PASSOS=[];
+const P=(etapa,ag,msg,fn,ms=260)=>PASSOS.push({etapa,ag,msg,fn,ms});
+(function(){
+  const nPal=D.clipes.reduce((a,c)=>a+c.toks.filter(t=>t.w).length,0);
+  P(0,"corte-01",`${D.clipes.length} clipes importados · ${num(D.bruto_total)} s`,()=>{},500);
+  P(0,"corte-02",`fala transcrita · ${nPal} palavras`,()=>{},500);
+  // itens a cortar: pausas e trechos fora dos takes escolhidos
+  const itens=[];
+  D.clipes.forEach((cl,ci)=>{ let run=null;
+    cl.toks.forEach((tk,j)=>{ const id=`t${ci}_${j}`;
+      if(tk.p!=null){ if(run){itens.push(run); run=null;} itens.push({ids:[id],tipo:"p",v:tk.p}); }
+      else if(!tk.k){ if(!run) run={ids:[],tipo:"w",ws:[]}; run.ids.push(id); run.ws.push(tk.w); }
+      else if(run){ itens.push(run); run=null; } });
+    if(run) itens.push(run); });
+  const peso=itens.map(it=>it.tipo==="p"?it.v:it.ws.length*.35), soma=peso.reduce((a,b)=>a+b,0), tirar=D.bruto_total-Dfim;
+  itens.forEach((it,k)=>{ const ag="corte-0"+(k%4+1);
+    const msg= it.tipo==="p" ? `pausa removida · ${num(it.v)} s` : `take descartado · “${it.ws.slice(0,4).join(" ")}${it.ws.length>4?"…":""}”`;
+    P(0,ag,msg,(inst)=>{ it.ids.forEach(id=>{ M.cortados.add(id); const e=document.getElementById(id); if(e) e.classList.add("cortado"); });
+      M.dur-=peso[k]/soma*tirar; $("#numero").innerHTML=num(M.dur)+" s<small>duração do vídeo</small>";
+      if(!inst){ desenhaVideo(); aponta(ag,document.getElementById(it.ids[0])); const e=document.getElementById(it.ids[0]); if(e) e.scrollIntoView({block:"nearest"}); } }, it.tipo==="p"?150:220);
+  });
+  P(0,"corte-01",`timeline montada · ${D.segs.length} planos · ${num(Dfim)} s`,(inst)=>{ M.fase="cortado"; M.dur=Dfim; $("#numero").innerHTML=num(Dfim)+" s<small>duração do vídeo</small>"; if(!inst){ desenhaPistas(); aponta("corte-01",pista.video);} },900);
+  // legenda
+  D.legendas.forEach((l,i)=>{ const ag="legenda-0"+(i%3+1);
+    P(1,ag,"“"+l.ws.map(w=>w.w).join(" ")+"”",(inst)=>{ M.legs=i+1; foco(l.a+.05);
+      const lin=el("div"); const tc=el("code",null,fmt(l.a)); lin.append(tc); l.ws.forEach(w=>{ lin.append(w.b?el("b",null,w.w):w.w," "); }); $("#linhas")&&$("#linhas").prepend(lin);
+      if(inst) return; desenhaPistas(); aponta(ag,document.getElementById("leg"+i));
+      const g=$("#grande"); g.innerHTML=""; const ws=l.ws.map(w=>{ const s=el("span","w"+(w.b?" b":""),w.w); g.append(s); return s; });
+      const t0=l.ws[0].t; ws.forEach((s,k)=>setTimeout(()=>s.classList.add("on"), reduz?0:Math.min(900,(l.ws[k].t-t0)*1000*.6)/vel)); }, 520+l.ws.length*90);
+  });
+  // zoom
+  const pts=D.segs.map(s=>({t:(s.t0+s.t1)/2,z:s.zoom,s}));
+  pts.forEach((p,i)=>{ const pct=Math.round(p.z*100); const ag="zoom-0"+(i%3+1);
+    const msg = p.s.tipo==="insert" ? `insert recortado do 4K · ${pct}% em ${fmt(p.s.t0).slice(0,5)}` : (p.z>1 ? `zoom ${pct}% em ${fmt(p.s.t0).slice(0,5)}` : `plano aberto · push-in leve em ${fmt(p.s.t0).slice(0,5)}`);
+    P(2,ag,msg,(inst)=>{ M.zooms=i+1; foco(p.s.t0+.1); if(inst) return; desenhaZoom(); $("#numero").textContent=pct+"%"; aponta(ag,document.getElementById("zp"+i)||document.getElementById("seg"+p.s.i)); },380);
+  });
+  // cor
+  [["cor-01","análise de exposição · 15 planos"],["cor-02",D.lut?"LUT "+D.lut.id+" "+D.lut.intensidade+"%":"regra "+D.marca+": cor original, sem LUT"],["cor-03","selo Ibama aplicado"]].forEach(([ag,msg],i)=>
+    P(3,ag,msg,(inst)=>{ M.cor=i+1; const k=document.getElementById("cor"+i); if(k) k.classList.add("on"); if(!inst) aponta(ag,k); },700));
+  // cards
+  D.cartelas.forEach((c,i)=>P(4,"cards-0"+(i%2+1),`cartela “${c.t}” em ${fmt(c.a).slice(0,5)}`,(inst)=>{ M.cards=i+1; foco(c.a+.6);
+    const l=$("#lcart"); if(l) l.append(el("span",null,c.t));
+    if(inst) return; $("#cg").textContent=c.t; $("#cs").textContent=c.s; desenhaPistas(); aponta("cards-0"+(i%2+1),document.getElementById("card"+i)); },900));
+  // som
+  const chip=(t,c)=>{ const ch=$("#chips"); if(!ch) return; const s=el("span","chip",t); s.style.borderColor=css(c); s.style.color=css(c); ch.append(s); return s; };
+  P(5,"som-01","voz só da fala · áudio dos inserts descartado",(inst)=>{ chip("voz nivelada · −24 LUFS por take","--azul"); if(!inst) aponta("som-01",pista.voz); },700);
+  P(5,"som-02",`trilha sem direitos autorais · ${D.trilha.replace(/^trilha_|\.wav$/g,"")}`,(inst)=>{ M.som.add("trilha"); chip("trilha composta para a marca","--verde"); if(!inst){ desenhaPistas(); aponta("som-02",pista.musica);} },900);
+  P(5,"som-03","trilha abaixa sob a fala (ducking)",(inst)=>{ chip("ducking na voz","--verde"); },600);
+  if(D.drop_item!=null){ const s=D.segs[D.drop_item]; P(5,"som-04",`riser + drop em ${fmt(s.t0).slice(0,5)}`,(inst)=>{ chip("riser + boom no drop","--coral"); foco(s.t0); },700); }
+  D.segs.filter(s=>s.tipo==="insert").forEach((s,i)=>P(5,"som-0"+(i%3+2),`whoosh + flare em ${fmt(s.t0).slice(0,5)}`,(inst)=>{ M.som.add("sfx"); M.som.add("flare"+i); foco(s.t0+.2); if(!inst){ desenhaPistas(); aponta("som-0"+(i%3+2),document.getElementById("fx"+i)); } },600));
+  P(5,"som-01","música continua sob o encerramento",(inst)=>{ chip("música até o fim do logo","--verde"); },600);
+  // exportar
+  for(let k=1;k<=10;k++) P(6,"export-01",`renderizando · ${k*10}% · ${Math.round(D.dur*60*k/10)} quadros`,(inst)=>{ M.exp=k; const b=$("#barra"); if(b) b.style.width=(k*10)+"%"; $("#numero").textContent=(k*10)+"%"; foco(D.dur*k/10-.1); if(!inst) aponta("export-01",b); },420);
+  P(6,"export-01",`pronto · ${D.saida.res} · ${D.saida.fps} fps · ${D.saida.bitrate}`,(inst)=>{ M.pronto=true; const f=$("#fim"); if(f){ f.innerHTML=""; f.append(el("p",null,"Vídeo pronto. Toque em “Assistir vídeo final com som” para ver com a timeline andando junto.")); } $("#assistir").hidden=false; },600);
+})();
+function desenhaZoom(){
+  const g=$("#graf"); if(!g) return; const W=600,H=240, zmin=.95, zmax=1.7;
+  const X=t=>20+t/Dfim*(W-40), Y=z=>H-24-(z-zmin)/(zmax-zmin)*(H-50);
+  let s=`<line x1="20" y1="${Y(1)}" x2="${W-20}" y2="${Y(1)}" stroke="${css("--linha")}" stroke-dasharray="4 4"/><text x="22" y="${Y(1)-6}" fill="${css("--mudo")}" font-size="11" font-family="JetBrains Mono">100%</text><text x="22" y="${Y(1.6)-6}" fill="${css("--mudo")}" font-size="11" font-family="JetBrains Mono">160%</text>`;
+  const pts=D.segs.slice(0,M.zooms); let d="";
+  pts.forEach((p,i)=>{ const x0=X(p.t0), x1=X(p.t1); d+=(i?"L":"M")+x0+" "+Y(1)+" L"+(x0+4)+" "+Y(p.zoom)+" L"+(x1-4)+" "+Y(p.zoom)+" L"+x1+" "+Y(1)+" "; });
+  s+=`<path d="${d}" fill="none" stroke="${css("--rosa")}" stroke-width="2.5" stroke-linejoin="round"/>`;
+  pts.forEach((p,i)=>{ s+=`<circle id="zp${i}" cx="${(X(p.t0)+X(p.t1))/2}" cy="${Y(p.zoom)}" r="4" fill="${css("--texto")}"/>`; });
+  for(let t=0;t<=Dfim;t+=10) s+=`<text x="${X(t)}" y="${H-6}" fill="${css("--mudo")}" font-size="11" font-family="JetBrains Mono" text-anchor="middle">${fmt(t).slice(0,5)}</text>`;
+  g.innerHTML=s;
+}
+
+/* ---------- motor do replay ---------- */
+let idx=0, rodando=!reduz, timer=null, tocando=false;
+function prepEtapa(e){ M.etapa=e; const tipo=["corte","legenda","zoom","cor","cards","som","export"][e]; Object.entries(cursores).forEach(([n,c])=>{ c.style.opacity = n.startsWith(tipo)?1:0; }); PALCOS[e](); $("#numero").textContent=""; if(e===0) $("#numero").innerHTML=num(M.dur)+" s<small>duração do vídeo</small>"; desenhaEtapas(); }
+function aplica(i,inst){ const p=PASSOS[i]; if(p.etapa!==M.etapa) prepEtapa(p.etapa); p.fn(inst); addLog(p.ag,p.msg); }
+function passo(){
+  timer=null; if(!rodando||idx>=PASSOS.length) return;
+  aplica(idx,false); idx++; desenhaLog(); desenhaEtapas();
+  if(idx<PASSOS.length) timer=setTimeout(passo, PASSOS[idx-1].ms/vel); else { rodando=false; $("#play").textContent="Rever edição"; }
+}
+function reinicia(ate){
+  clearTimeout(timer); timer=null; paraVideo(); M=novoModelo(); idx=0; prepEtapa(0);
+  while(idx<ate){ aplica(idx,true); idx++; }
+  if(PASSOS[idx]&&PASSOS[idx].etapa!==M.etapa) prepEtapa(PASSOS[idx].etapa);
+  if(M.etapa===1){ /* reconstrói lista */ }
+  if(M.etapa===2) desenhaZoom();
+  desenhaPistas(); desenhaLog(); desenhaEtapas();
+  if(M.pronto){ $("#assistir").hidden=false; }
+}
+function pular(e){ const ate=PASSOS.findIndex(p=>p.etapa===e); reinicia(ate<0?PASSOS.length:ate); rodando=true; $("#play").textContent="Pausar edição"; timer=setTimeout(passo,300/vel); }
+$("#play").onclick=()=>{
+  if(idx>=PASSOS.length){ reinicia(0); rodando=true; $("#play").textContent="Pausar edição"; timer=setTimeout(passo,400); return; }
+  rodando=!rodando; $("#play").textContent= rodando?"Pausar edição":"Continuar edição"; if(rodando&&!timer) passo();
+};
+$("#reini").onclick=()=>{ reinicia(0); rodando=true; $("#play").textContent="Pausar edição"; timer=setTimeout(passo,400); };
+
+/* ---------- vídeo final ---------- */
+const V=$("#video");
+function paraVideo(){ tocando=false; V.pause(); V.muted=true; $("#assistir").textContent="Assistir vídeo final com som"; }
+$("#assistir").onclick=()=>{
+  if(tocando){ paraVideo(); return; }
+  clearTimeout(timer); timer=null; rodando=false; $("#play").textContent="Rever edição";
+  if(idx<PASSOS.length){ reinicia(PASSOS.length); }
+  M.fase="cortado"; desenhaPistas(); tocando=true; V.muted=false; V.currentTime=0;
+  V.play().catch(()=>{ V.muted=true; V.play().catch(()=>{}); }); $("#assistir").textContent="Pausar vídeo";
+};
+V.addEventListener("timeupdate",()=>{ if(!tocando) return; const t=V.currentTime; cab.style.left=(t/D.dur*100)+"%"; $("#tempo").textContent=fmt(t)+" / "+fmt(D.dur); $("#tempo-previa").textContent=fmt(t); });
+V.addEventListener("ended",paraVideo);
+$("#pistas").addEventListener("click",ev=>{ if(M.fase==="bruto") return; const r=$("#pistas").getBoundingClientRect(); const t=(ev.clientX-r.left)/r.width*D.dur; V.currentTime=Math.max(0,Math.min(D.dur-.05,t)); foco(t); $("#tempo").textContent=fmt(t)+" / "+fmt(D.dur); });
+new ResizeObserver(()=>{ if(M) desenhaPistas(); }).observe($("#pistas"));
+$("#tempo").textContent=fmt(0)+" / "+fmt(D.dur);
+
+reinicia(reduz?PASSOS.length:0);
+if(!reduz){ rodando=true; timer=setTimeout(passo,900); }
+</script>
