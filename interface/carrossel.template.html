@@ -101,17 +101,29 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,.btn:focus-visib
   <div class="meio">
     <form class="caixa form" id="briefing" novalidate>
       <h3>Briefing <span id="exemplo">exemplo carregado</span></h3>
-      <div><label class="rot" for="marca">Marca</label><select id="marca"></select></div>
+      <div><label class="rot" for="cliente">Cliente</label><select id="cliente"></select></div>
+      <details id="cli-box"><summary class="rot" style="cursor:pointer">Identidade do cliente</summary>
+        <div class="form" style="margin-top:8px">
+          <div><label class="rot" for="cli-nome">Nome</label><input type="text" id="cli-nome"></div>
+          <div><label class="rot" for="cli-seg">Segmento</label><input type="text" id="cli-seg" placeholder="Ex.: clínica odontológica, loja de roupas"></div>
+          <div class="duas"><div><label class="rot" for="cli-cor">Cor principal</label><input type="color" id="cli-cor" style="width:100%;height:34px"></div>
+            <div><label class="rot" for="cli-cor2">Cor de apoio</label><input type="color" id="cli-cor2" style="width:100%;height:34px"></div></div>
+          <div class="duas"><div><label class="rot" for="cli-ft">Fonte do título</label><select id="cli-ft"></select></div>
+            <div><label class="rot" for="cli-fx">Fonte do texto</label><select id="cli-fx"></select></div></div>
+          <div><label class="rot" for="cli-logo">Logo (PNG, de preferência transparente)</label><input type="file" id="cli-logo" accept="image/png,image/svg+xml,image/jpeg"></div>
+          <label class="check"><input type="checkbox" id="ibama"> Selo Ibama (anúncio de veículo)</label>
+          <div class="grupo"><button class="btn min" type="button" id="cli-salvar">Salvar cliente</button><button class="btn min" type="button" id="cli-apagar">Apagar</button></div>
+        </div>
+      </details>
       <div><label class="rot" for="tema">Tema do carrossel</label><textarea id="tema"></textarea></div>
-      <div><label class="rot" for="objetivo">Objetivo</label><select id="objetivo"><option>Gerar test drive</option><option>Divulgar oferta</option><option>Apresentar modelo</option><option>Educar sobre o produto</option><option>Institucional da loja</option></select></div>
+      <div><label class="rot" for="objetivo">Objetivo</label><select id="objetivo"><option>Educar o público</option><option>Vender produto ou serviço</option><option>Divulgar oferta</option><option>Gerar contatos</option><option>Engajamento</option><option>Institucional</option></select></div>
       <div class="duas">
         <div><label class="rot" for="nslides">Slides</label><select id="nslides"><option>5</option><option selected>6</option><option>7</option><option>8</option><option>10</option></select></div>
-        <div><label class="rot" for="tom">Tom</label><select id="tom"><option>Premium</option><option>Direto</option><option>Leve</option><option>Técnico</option></select></div>
+        <div><label class="rot" for="tom">Tom</label><select id="tom"><option>Direto</option><option>Premium</option><option>Leve</option><option>Técnico</option><option>Divertido</option></select></div>
       </div>
       <div><label class="rot" for="cta">Chamada final</label><input type="text" id="cta"></div>
-      <div><label class="rot" for="dados">Dados obrigatórios (preço, condição, prazo)</label><textarea id="dados" style="min-height:48px" placeholder="Só entra no carrossel o que estiver aqui."></textarea></div>
+      <div><label class="rot" for="dados">Informações obrigatórias (preço, datas, endereço)</label><textarea id="dados" style="min-height:48px" placeholder="Só entra no carrossel o que estiver aqui."></textarea></div>
       <div><label class="rot" for="arquivos">Fotos</label><input type="file" id="arquivos" accept="image/*" multiple><div class="fotos" id="fotos" style="margin-top:6px"></div></div>
-      <label class="check"><input type="checkbox" id="ibama" checked> Selo Ibama em todos os slides</label>
       <button class="btn prim" type="submit" id="gerar">Gerar carrossel</button>
       <p class="aviso" id="aviso-ia"></p>
     </form>
@@ -140,32 +152,48 @@ const el = (t,c,x) => { const e=document.createElement(t); if(c) e.className=c; 
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const reduz = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const W=1080, H=1350;
-const MARCAS = {
-  byd:{nome:"BYD",cor:"#00A3E0",fonte:"Figtree",logo:"logo_grupo_iesa"},
-  bmw:{nome:"BMW",cor:"#1C69D4",fonte:"Figtree",logo:"logo_bmw"},
-  bmw_motorrad:{nome:"BMW Motorrad",cor:"#1C69D4",fonte:"Figtree",logo:"logo_grupo_iesa"},
-  mini:{nome:"MINI",cor:"#F4C300",fonte:"Figtree",logo:"logo_grupo_iesa"},
-  volvo:{nome:"Volvo",cor:"#4A6B8A",fonte:"Manrope",logo:"logo_volvo"},
-  harley:{nome:"Harley-Davidson",cor:"#F26722",fonte:"Figtree",logo:"logo_grupo_iesa"},
-  iesa:{nome:"Grupo IESA",cor:"#1E4FA3",fonte:"Figtree",logo:"logo_grupo_iesa"}
-};
+const FONTES={"Bricolage Grotesque":"opsz,wght@12..96,400;12..96,700;12..96,800","Figtree":"wght@400;600;800","Inter":"wght@400;600;800","Manrope":"wght@400;600;800","Montserrat":"wght@400;600;800","Poppins":"wght@400;600;800","Plus Jakarta Sans":"wght@400;600;800","DM Sans":"wght@400;600;800","Outfit":"wght@400;600;800","Sora":"wght@400;600;800","Space Grotesk":"wght@400;600;700","Raleway":"wght@400;600;800","Archivo":"wght@400;600;800","Syne":"wght@400;600;800","Unbounded":"wght@400;600;800","Oswald":"wght@400;600;700","Bebas Neue":"","Anton":"","Playfair Display":"wght@400;600;800","DM Serif Display":"","Lora":"wght@400;600;700"};
+const EXEMPLO_CLI={id:"grace",nome:"Grace Studio",segmento:"Agência de vídeo e conteúdo",cor:"#FF6B4A",cor2:"#7C5CFF",fonteT:"Bricolage Grotesque",fonteX:"Inter",logo:null,ibama:false};
+let clientes=[EXEMPLO_CLI];
+try{ const c=JSON.parse(localStorage.getItem("gs_clientes")||"null"); if(Array.isArray(c)&&c.length) clientes=c; }catch(e){}
+const logoImgs={};
 const ETAPAS=["Briefing","Roteiro","Layout","Tipografia","Imagens","Cor","Exportar"];
 const AG_COR={briefing:"--ciano",roteiro:"--amarelo",layout:"--rosa",tipo:"--azul",imagem:"--verde",cor:"--coral",export:"--ciano"};
 const PISTAS=[["texto","Texto","--amarelo"],["layout","Layout","--rosa"],["imagem","Imagem","--verde"],["marca","Marca","--coral"]];
-const LAYOUTS={capa:"Capa com foto",foto:"Foto + texto",lista:"Lista",numero:"Número grande",citacao:"Frase de impacto",cta:"Chamada final"};
+const LAYOUTS={capa:"Capa",foto:"Foto + texto",lista:"Lista",numero:"Número grande",citacao:"Frase de impacto",cta:"Chamada final"};
 
 /* ---------- estado ---------- */
 let C = null;            // carrossel: {marca, slides:[{tipo,titulo,destaque,texto,itens,numero,layout,foto,tam}], legenda}
-let fotos = A.fotos.map(src=>({src, img:null}));
+let fotos = [];
 let sel = 0, acoes=0, totalAcoes=0, etapa=-1, log=[], vel=1, pausado=false, rodando=false;
 const imgs = {};
 function carrega(src){ return new Promise(r=>{ const i=new Image(); i.onload=()=>r(i); i.onerror=()=>r(null); i.src=src; }); }
 
-/* ---------- briefing ---------- */
-Object.entries(MARCAS).forEach(([k,m])=>{ const o=el("option",null,m.nome); o.value=k; $("#marca").append(o); });
-$("#marca").value="byd";
-$("#tema").value="BYD Dolphin Mini: o elétrico mais vendido do Brasil, ideal para o dia a dia na cidade.";
-$("#cta").value="Agende seu test drive na BYD IESA";
+/* ---------- briefing e clientes ---------- */
+const carregadas=new Set();
+async function carregaFonte(f){ if(!f||carregadas.has(f)) return; carregadas.add(f);
+  const l=document.createElement("link"); l.rel="stylesheet"; l.href="https://fonts.googleapis.com/css2?family="+f.replace(/ /g,"+")+(FONTES[f]?":"+FONTES[f]:"")+"&display=swap"; document.head.append(l);
+  await new Promise(r=>{ l.onload=r; l.onerror=r; setTimeout(r,4000); });
+  try{ await Promise.all([document.fonts.load(`800 80px "${f}"`),document.fonts.load(`400 40px "${f}"`)]); }catch(e){} }
+Object.keys(FONTES).forEach(f=>{ ["#cli-ft","#cli-fx"].forEach(id=>{ const o=el("option",null,f); o.value=f; $(id).append(o); }); });
+function listaClientes(id){ const s=$("#cliente"); s.innerHTML=""; clientes.forEach(c=>{ const o=el("option",null,c.nome); o.value=c.id; s.append(o); }); const n=el("option",null,"+ Novo cliente"); n.value="_novo"; s.append(n); if(id) s.value=id; }
+function cliAtual(){ return clientes.find(c=>c.id===$("#cliente").value)||clientes[0]; }
+async function preencheCli(c){ $("#cli-nome").value=c.nome; $("#cli-seg").value=c.segmento||""; $("#cli-cor").value=c.cor; $("#cli-cor2").value=c.cor2||c.cor; $("#cli-ft").value=c.fonteT; $("#cli-fx").value=c.fonteX; $("#ibama").checked=!!c.ibama;
+  await Promise.all([carregaFonte(c.fonteT),carregaFonte(c.fonteX)]); if(c.logo&&!logoImgs[c.id]) logoImgs[c.id]=await carrega(c.logo); }
+function leCli(){ const c=cliAtual(); return {...c, nome:$("#cli-nome").value.trim()||c.nome, segmento:$("#cli-seg").value.trim(), cor:$("#cli-cor").value, cor2:$("#cli-cor2").value, fonteT:$("#cli-ft").value, fonteX:$("#cli-fx").value, ibama:$("#ibama").checked}; }
+function salvaClientes(){ try{ localStorage.setItem("gs_clientes",JSON.stringify(clientes)); }catch(e){ toast("Não deu para guardar o cliente neste navegador (logo grande demais?)."); } }
+$("#cliente").onchange=async()=>{ if($("#cliente").value==="_novo"){ const c={id:"c"+Date.now(),nome:"Novo cliente",segmento:"",cor:"#2B6CF6",cor2:"#111827",fonteT:"Figtree",fonteX:"Inter",logo:null,ibama:false}; clientes.push(c); listaClientes(c.id); $("#cli-box").open=true; await preencheCli(c); $("#cli-nome").focus(); $("#cli-nome").select(); return; }
+  await preencheCli(cliAtual()); aplicaCli(); };
+async function aplicaCli(){ if(!C||rodando) return; const c=leCli(); await Promise.all([carregaFonte(c.fonteT),carregaFonte(c.fonteX)]); C.cliente=c; desenhaFaixa(); grande(); }
+["#cli-cor","#cli-cor2","#cli-ft","#cli-fx","#ibama","#cli-nome"].forEach(id=>$(id).addEventListener("change",aplicaCli));
+$("#cli-salvar").onclick=()=>{ const c=leCli(); const i=clientes.findIndex(x=>x.id===c.id); clientes[i]=c; salvaClientes(); listaClientes(c.id); toast("Cliente salvo: "+c.nome); };
+$("#cli-apagar").onclick=async()=>{ if(clientes.length<2){ toast("Precisa ter pelo menos um cliente."); return; } const c=cliAtual(); if($("#cli-apagar").dataset.conf!==c.id){ $("#cli-apagar").dataset.conf=c.id; $("#cli-apagar").textContent="Confirmar apagar"; return; }
+  clientes=clientes.filter(x=>x.id!==c.id); salvaClientes(); $("#cli-apagar").textContent="Apagar"; $("#cli-apagar").dataset.conf=""; listaClientes(clientes[0].id); await preencheCli(clientes[0]); aplicaCli(); };
+$("#cli-logo").onchange=e=>{ const f=e.target.files[0]; if(!f) return; if(f.size>600000) toast("Logo grande: pode não caber para salvar. Prefira um PNG até 600 KB.");
+  const rd=new FileReader(); rd.onload=async()=>{ const c=cliAtual(); c.logo=rd.result; logoImgs[c.id]=await carrega(rd.result); aplicaCli(); toast("Logo carregado. Toque em “Salvar cliente” para guardar."); }; rd.readAsDataURL(f); };
+$("#tema").value="5 erros que fazem seu Reels perder alcance";
+$("#cta").value="Fale com a Grace Studio";
+$("#objetivo").value="Educar o público";
 function desenhaFotos(){ const f=$("#fotos"); f.innerHTML=""; fotos.forEach(x=>{ const i=el("img"); i.src=x.src; i.alt=""; f.append(i); }); }
 $("#arquivos").onchange=async e=>{
   const fs=[...e.target.files].slice(0,12); if(!fs.length) return;
@@ -210,10 +238,15 @@ function escreve(ctx, bloco, x, y, cor, corDest, peso, fam, lh=1.08){
   bloco.ls.forEach((ln,i)=>{ let xx=x; ln.forEach(p=>{ ctx.font=`${peso} ${bloco.tam}px "${fam}"`; ctx.fillStyle=p.d?corDest:cor; ctx.fillText(p.t,xx,y+i*bloco.tam*lh); xx+=p.w+ctx.measureText(" ").width; }); });
   return y+bloco.ls.length*bloco.tam*lh;
 }
-function cobre(ctx, img, x, y, w, h){ if(!img){ ctx.fillStyle="#1a1a1a"; ctx.fillRect(x,y,w,h); return; }
+function grafico(ctx,x,y,w,h){ const m=C.cliente, c1=m.cor, c2=m.cor2||m.cor; ctx.save(); ctx.beginPath(); ctx.rect(x,y,w,h); ctx.clip();
+  ctx.fillStyle="#0d0c14"; ctx.fillRect(x,y,w,h);
+  [[.85,.15,.75,c1,.85],[.1,.8,.7,c2,.75],[.55,.55,.35,c1,.35]].forEach(([fx,fy,fr,c,a])=>{ const g=ctx.createRadialGradient(x+w*fx,y+h*fy,0,x+w*fx,y+h*fy,Math.max(w,h)*fr); g.addColorStop(0,c); g.addColorStop(1,"rgba(0,0,0,0)"); ctx.globalAlpha=a; ctx.fillStyle=g; ctx.fillRect(x,y,w,h); });
+  ctx.globalAlpha=.07; ctx.strokeStyle="#fff"; ctx.lineWidth=2; for(let k=-h;k<w;k+=60){ ctx.beginPath(); ctx.moveTo(x+k,y+h); ctx.lineTo(x+k+h,y); ctx.stroke(); }
+  ctx.restore(); }
+function cobre(ctx, img, x, y, w, h){ if(!img){ grafico(ctx,x,y,w,h); return; }
   const s=Math.max(w/img.width,h/img.height), iw=img.width*s, ih=img.height*s; ctx.save(); ctx.beginPath(); ctx.rect(x,y,w,h); ctx.clip(); ctx.drawImage(img, x+(w-iw)/2, y+(h-ih)/2, iw, ih); ctx.restore(); }
 function render(ctx, s, i, n, fase=9){
-  const m=MARCAS[C.marca], fam=m.fonte, cor=m.cor, M=84;
+  const m=C.cliente, fam=m.fonteT, fX=m.fonteX, cor=m.cor, cor2=m.cor2||m.cor, M=84, fundoCor = i%2 ? cor2 : cor;
   ctx.save(); ctx.clearRect(0,0,W,H); ctx.textBaseline="top";
   const lay = fase>=2 ? s.layout : null;
   const img = fase>=4 && s.foto!=null && fotos[s.foto] ? fotos[s.foto].img : null;
@@ -222,34 +255,38 @@ function render(ctx, s, i, n, fase=9){
   if(!lay){ ctx.fillStyle="#15131f"; ctx.fillRect(0,0,W,H); ctx.strokeStyle="rgba(255,255,255,.12)"; ctx.lineWidth=3; ctx.setLineDash([18,14]); ctx.strokeRect(40,40,W-80,H-80); ctx.setLineDash([]); }
   else if(lay==="capa"||lay==="citacao"){ cobre(ctx,img,0,0,W,H); const g=ctx.createLinearGradient(0,H*.3,0,H); g.addColorStop(0,"rgba(0,0,0,0)"); g.addColorStop(1,"rgba(0,0,0,.88)"); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); if(lay==="citacao"){ ctx.fillStyle="rgba(0,0,0,.45)"; ctx.fillRect(0,0,W,H);} }
   else if(lay==="foto"){ ctx.fillStyle="#0f0f12"; ctx.fillRect(0,0,W,H); cobre(ctx,img,0,0,W,H*.56); }
-  else if(lay==="lista"||lay==="numero"){ ctx.fillStyle= temCor? cor : "#22202e"; ctx.fillRect(0,0,W,H); if(img&&lay==="numero"){ ctx.globalAlpha=.18; cobre(ctx,img,0,0,W,H); ctx.globalAlpha=1; } }
+  else if(lay==="lista"||lay==="numero"){ ctx.fillStyle= temCor? fundoCor : "#22202e"; ctx.fillRect(0,0,W,H); if(img&&lay==="numero"){ ctx.globalAlpha=.18; cobre(ctx,img,0,0,W,H); ctx.globalAlpha=1; } }
   else if(lay==="cta"){ ctx.fillStyle="#0b0b0e"; ctx.fillRect(0,0,W,H); if(img){ ctx.globalAlpha=.35; cobre(ctx,img,0,0,W,H*.62); ctx.globalAlpha=1; const g=ctx.createLinearGradient(0,H*.2,0,H*.62); g.addColorStop(0,"rgba(11,11,14,0)"); g.addColorStop(1,"#0b0b0e"); ctx.fillStyle=g; ctx.fillRect(0,0,W,H*.62);} }
-  const branco="#fff", dest = temCor ? (lay==="lista"||lay==="numero" ? corTexto(cor)==="#fff"?"#0b0b0e":"#fff" : cor) : branco;
-  const txtCor = (lay==="lista"||lay==="numero") && temCor ? corTexto(cor) : branco;
+  const branco="#fff", dest = temCor ? (lay==="lista"||lay==="numero" ? corTexto(fundoCor) : cor) : branco;
+  const txtCor = (lay==="lista"||lay==="numero") && temCor ? corTexto(fundoCor) : branco;
   if(fase>=1){
     const fT = fase>=3 ? 1 : 0;  // tipografia ajustada?
-    if(!lay){ ctx.fillStyle="rgba(255,255,255,.85)"; ctx.font=`700 56px "${fam}"`; const b=ajusta(ctx,s.titulo,"",W-2*M-40,600,64,40,700,fam); escreve(ctx,b,M+20,M+40,"#fff","#fff",700,fam); ctx.font=`400 34px "${fam}"`; const b2=ajusta(ctx,s.texto||"","",W-2*M-40,400,34,26,400,fam); escreve(ctx,b2,M+20,H*.55,"rgba(255,255,255,.7)","#fff",400,fam,1.3); }
+    if(!lay){ ctx.fillStyle="rgba(255,255,255,.85)"; ctx.font=`700 56px "${fam}"`; const b=ajusta(ctx,s.titulo,"",W-2*M-40,600,64,40,700,fam); escreve(ctx,b,M+20,M+40,"#fff","#fff",700,fam); ctx.font=`400 34px "${fam}"`; const b2=ajusta(ctx,s.texto||"","",W-2*M-40,400,34,26,400,fX); escreve(ctx,b2,M+20,H*.55,"rgba(255,255,255,.7)","#fff",400,fX,1.3); }
     else if(lay==="capa"){ ctx.shadowColor="rgba(0,0,0,.5)"; ctx.shadowBlur=24; const b=ajusta(ctx,s.titulo,s.destaque,W-2*M,H*.32,fT?150:110,64,800,fam); const y0=H-M-150-b.ls.length*b.tam*1.08; let y=escreve(ctx,b,M,y0,branco,dest,800,fam);
-      if(s.texto){ const b2=ajusta(ctx,s.texto,"",W-2*M,120,40,30,400,fam); escreve(ctx,b2,M,y+18,"rgba(255,255,255,.85)",branco,400,fam,1.25); } ctx.shadowBlur=0; ctx.shadowColor="transparent"; }
-    else if(lay==="foto"){ let y=H*.56+56; const b=ajusta(ctx,s.titulo,s.destaque,W-2*M,250,fT?92:80,48,800,fam); y=escreve(ctx,b,M,y,branco,dest,800,fam); if(s.texto){ const b2=ajusta(ctx,s.texto,"",W-2*M,H-y-150,40,28,400,fam); escreve(ctx,b2,M,y+22,"rgba(255,255,255,.82)",branco,400,fam,1.3); } }
+      if(s.texto){ const b2=ajusta(ctx,s.texto,"",W-2*M,120,40,30,400,fX); escreve(ctx,b2,M,y+18,"rgba(255,255,255,.85)",branco,400,fX,1.25); } ctx.shadowBlur=0; ctx.shadowColor="transparent"; }
+    else if(lay==="foto"){ let y=H*.56+56; const b=ajusta(ctx,s.titulo,s.destaque,W-2*M,250,fT?92:80,48,800,fam); y=escreve(ctx,b,M,y,branco,dest,800,fam); if(s.texto){ const b2=ajusta(ctx,s.texto,"",W-2*M,H-y-150,40,28,400,fX); escreve(ctx,b2,M,y+22,"rgba(255,255,255,.82)",branco,400,fX,1.3); } }
     else if(lay==="lista"){ const its=(s.itens&&s.itens.length?s.itens:(s.texto||"").split(/[.;]\s*/).filter(Boolean)).slice(0,5);
-      const b=ajusta(ctx,s.titulo,s.destaque,W-2*M,320,fT?118:90,56,800,fam); const bis=its.map(it=>ajusta(ctx,it,"",W-2*M-70,170,fT?60:50,36,600,fam));
+      const b=ajusta(ctx,s.titulo,s.destaque,W-2*M,320,fT?118:90,56,800,fam); const bis=its.map(it=>ajusta(ctx,it,"",W-2*M-70,170,fT?60:50,36,600,fX));
       const altura=b.ls.length*b.tam*1.08+60+bis.reduce((a,x)=>a+x.ls.length*x.tam*1.2+44,0); let y=Math.max(M+30,(H-200-altura)/2+40);
       y=escreve(ctx,b,M,y,txtCor,txtCor,800,fam)+60;
-      bis.forEach(bi=>{ ctx.fillStyle=txtCor; ctx.globalAlpha=.9; ctx.beginPath(); ctx.arc(M+16,y+bi.tam*.55,13,0,7); ctx.fill(); ctx.globalAlpha=1; y=escreve(ctx,bi,M+64,y,txtCor,txtCor,600,fam,1.2)+44; }); }
-    else if(lay==="numero"){ const num=s.numero||s.destaque||"1"; ctx.font=`900 ${fT?300:240}px "${fam}"`; let tn=fT?300:240; while(ctx.measureText(num).width>W-2*M&&tn>120){ tn-=12; ctx.font=`900 ${tn}px "${fam}"`; } ctx.fillStyle=txtCor; ctx.fillText(num,M,H*.2);
-      let y=H*.2+tn*1.05; const b=ajusta(ctx,s.titulo,"",W-2*M,260,fT?76:64,44,800,fam); y=escreve(ctx,b,M,y,txtCor,txtCor,800,fam); if(s.texto){ const b2=ajusta(ctx,s.texto,"",W-2*M,H-y-160,38,28,400,fam); ctx.globalAlpha=.85; escreve(ctx,b2,M,y+20,txtCor,txtCor,400,fam,1.3); ctx.globalAlpha=1; } }
+      bis.forEach(bi=>{ ctx.fillStyle=txtCor; ctx.globalAlpha=.9; ctx.beginPath(); ctx.arc(M+16,y+bi.tam*.55,13,0,7); ctx.fill(); ctx.globalAlpha=1; y=escreve(ctx,bi,M+64,y,txtCor,txtCor,600,fX,1.2)+44; }); }
+    else if(lay==="numero"){ const num=s.numero||s.destaque||"1"; let tn=fT?380:280; ctx.font=`900 ${tn}px "${fam}"`; while(ctx.measureText(num).width>W-2*M&&tn>120){ tn-=12; ctx.font=`900 ${tn}px "${fam}"`; }
+      const b=ajusta(ctx,s.titulo,"",W-2*M,300,fT?96:72,48,800,fam); const b2= s.texto ? ajusta(ctx,s.texto,"",W-2*M,360,fT?50:42,32,400,fX) : null;
+      const alt=tn*1.0+30+b.ls.length*b.tam*1.08+(b2?28+b2.ls.length*b2.tam*1.3:0); let y=Math.max(M,(H-170-alt)/2);
+      ctx.font=`900 ${tn}px "${fam}"`; ctx.fillStyle=txtCor; ctx.fillText(num,M,y); y+=tn*1.0+30; y=escreve(ctx,b,M,y,txtCor,txtCor,800,fam);
+      if(b2){ ctx.globalAlpha=.88; escreve(ctx,b2,M,y+28,txtCor,txtCor,400,fX,1.3); ctx.globalAlpha=1; } }
     else if(lay==="citacao"){ const b=ajusta(ctx,"“"+s.titulo+"”",s.destaque,W-2*M,H*.5,fT?110:90,56,800,fam); const y0=(H-b.ls.length*b.tam*1.08)/2; escreve(ctx,b,M,y0,branco,dest,800,fam); }
     else if(lay==="cta"){ let y=H*.46; const b=ajusta(ctx,s.titulo,s.destaque,W-2*M,300,fT?100:84,52,800,fam); y=escreve(ctx,b,M,y,branco,dest,800,fam)+36;
       const bt=s.texto||$("#cta").value; ctx.font=`700 44px "${fam}"`; const tw=Math.min(W-2*M, ctx.measureText(bt).width+90); ctx.fillStyle=temCor?cor:"#fff"; ctx.beginPath(); ctx.roundRect(M,y,tw,104,52); ctx.fill(); ctx.fillStyle=temCor?corTexto(cor):"#111"; ctx.textBaseline="middle"; ctx.fillText(bt,M+45,y+52,tw-90); ctx.textBaseline="top"; }
   }
   // marca: logo, numeração, Ibama
   if(fase>=5){
-    const lg=imgs[m.logo]; if(lg&&(lay==="capa"||lay==="cta")){ const lw= lay==="cta"?380:250, lh=lg.height*lw/lg.width; ctx.drawImage(lg, lay==="cta"?M:W-M-lw, lay==="cta"?H*.16:M, lw, Math.min(lh, lay==="cta"?260:120)); }
-    const yr=H-150; ctx.font=`600 30px "${fam}"`; ctx.fillStyle= txtCor; ctx.globalAlpha=.75; ctx.textAlign="right"; ctx.fillText(`${i+1}/${n}`, W-M, yr); ctx.textAlign="left";
+    const lg=logoImgs[m.id]; if(!lg&&(lay==="capa"||lay==="cta")){ ctx.font=`800 ${lay==="cta"?64:40}px "${fam}"`; ctx.fillStyle="#fff"; ctx.textAlign=lay==="cta"?"left":"right"; ctx.fillText(m.nome, lay==="cta"?M:W-M, lay==="cta"?H*.2:M); ctx.textAlign="left"; }
+    if(lg&&(lay==="capa"||lay==="cta")){ const lw= lay==="cta"?380:250, lh=lg.height*lw/lg.width; ctx.drawImage(lg, lay==="cta"?M:W-M-lw, lay==="cta"?H*.16:M, lw, Math.min(lh, lay==="cta"?260:120)); }
+    const yr=H-150; ctx.font=`600 30px "${fX}"`; ctx.fillStyle= txtCor; ctx.globalAlpha=.75; ctx.textAlign="right"; ctx.fillText(`${i+1}/${n}`, W-M, yr); ctx.textAlign="left";
     if(i<n-1){ const ax=W-M-90, ay=yr+15; ctx.beginPath(); ctx.moveTo(ax-38,ay-6); ctx.lineTo(ax-16,ay-6); ctx.lineTo(ax-16,ay-16); ctx.lineTo(ax,ay); ctx.lineTo(ax-16,ay+16); ctx.lineTo(ax-16,ay+6); ctx.lineTo(ax-38,ay+6); ctx.fill(); }
     ctx.globalAlpha=1;
-    if($("#ibama").checked && imgs.ibama){ const iw=W*1960/2160, ih=imgs.ibama.height*iw/imgs.ibama.width; ctx.drawImage(imgs.ibama, W*100/2160, H-H*100/3840-ih, iw, ih); }
+    if(m.ibama && imgs.ibama){ const iw=W*1960/2160, ih=imgs.ibama.height*iw/imgs.ibama.width; ctx.drawImage(imgs.ibama, W*100/2160, H-H*100/3840-ih, iw, ih); }
   }
   ctx.restore();
 }
@@ -263,7 +300,7 @@ function desenhaFaixa(fase=9){
   C.slides.forEach((s,i)=>{ const col=el("div","col"); const b=el("button","slide-mini"); b.type="button"; b.id="mini"+i; b.setAttribute("aria-pressed",i===sel); b.setAttribute("aria-label","Slide "+(i+1));
     const cv=el("canvas"); cv.width=W; cv.height=H; b.append(cv); render(cv.getContext("2d"),s,i,n,fase); b.onclick=()=>{ sel=i; desenhaFaixa(fase); grande(fase); if(etapa>=ETAPAS.length) editor(); };
     col.append(b);
-    const blocos=[[fase>=1?(s.titulo||"").slice(0,24):"","--amarelo"],[fase>=2?LAYOUTS[s.layout]:"","--rosa"],[fase>=4&&s.foto!=null?"foto "+(s.foto+1):(fase>=4?"sem foto":""),"--verde"],[fase>=5?MARCAS[C.marca].nome:"","--coral"]];
+    const blocos=[[fase>=1?(s.titulo||"").slice(0,24):"","--amarelo"],[fase>=2?LAYOUTS[s.layout]:"","--rosa"],[fase>=4&&s.foto!=null?"foto "+(s.foto+1):(fase>=4?"sem foto":""),"--verde"],[fase>=5?C.cliente.nome:"","--coral"]];
     blocos.forEach(([t,c],k)=>{ const bl=el("div","blk",t); bl.id=`b${k}_${i}`; if(t) bl.style.background=css(c); col.append(bl); });
     cols.append(col); });
 }
@@ -271,25 +308,33 @@ function grande(fase=9){ render($("#grande").getContext("2d"), C.slides[sel], se
 
 /* ---------- roteiro (Claude ou modelo) ---------- */
 function roteiroModelo(b){
-  const n=b.n, tema=b.tema.split(/[:.]/)[0].trim()||"Seu próximo carro";
+  const n=b.n, tema=b.tema.split(/[:.]/)[0].trim()||"Seu tema aqui", cli=b.cliente.nome;
   const meio=[
-    {tipo:"foto",titulo:"Feito para a sua rotina",destaque:"sua rotina",texto:"Conforto, espaço e tecnologia para todos os trajetos."},
-    {tipo:"lista",titulo:"Por que escolher",itens:["Conforto para o dia a dia","Tecnologia a bordo","Atendimento Grupo IESA"]},
-    {tipo:"citacao",titulo:"Dirigir pode ser mais simples",destaque:"mais simples"},
-    {tipo:"foto",titulo:"Design que chama atenção",destaque:"Design",texto:"Detalhes que você percebe de longe e sente de perto."},
-    {tipo:"lista",titulo:"No test drive você vê",itens:["Como ele responde","O silêncio a bordo","A tecnologia na prática"]},
-    {tipo:"foto",titulo:"Cada detalhe pensado",destaque:"detalhe",texto:"Acabamento, conectividade e segurança em um só carro."}
+    {tipo:"foto",titulo:"O que pouca gente percebe",destaque:"pouca gente",texto:"Edite este texto com o primeiro ponto do seu conteúdo."},
+    {tipo:"lista",titulo:"Em resumo",itens:["Primeiro ponto","Segundo ponto","Terceiro ponto"]},
+    {tipo:"citacao",titulo:"Uma frase forte sobre o tema",destaque:"frase forte"},
+    {tipo:"foto",titulo:"Na prática",destaque:"prática",texto:"Mostre como isso aparece no dia a dia do seu público."},
+    {tipo:"lista",titulo:"Para lembrar",itens:["Ponto principal","Erro comum","Próximo passo"]},
+    {tipo:"foto",titulo:"Por que isso importa",destaque:"importa",texto:"Explique o ganho para quem está lendo."}
   ];
-  const sl=[{tipo:"capa",titulo:tema,destaque:tema.split(" ").slice(-2).join(" "),texto:"Arraste para o lado e conheça"}];
+  const sl=[{tipo:"capa",titulo:tema,destaque:tema.split(" ").slice(-1).join(" "),texto:"Arraste para o lado"}];
   for(let i=1;i<n-1;i++) sl.push({...meio[(i-1)%meio.length]});
-  if(b.dados && n>2) sl[n-2]={tipo:"lista",titulo:"Condições",itens:b.dados.split(/\n|;/).map(x=>x.trim()).filter(Boolean).slice(0,4)};
-  sl.push({tipo:"cta",titulo:"Venha sentir de perto",destaque:"sentir",texto:b.cta});
-  return {slides:sl, legenda:`${tema}\n\n${b.cta}.\n\n#${MARCAS[b.marca].nome.replace(/\W/g,"")} #GrupoIESA`};
+  if(b.dados && n>2) sl[n-2]={tipo:"lista",titulo:"Informações",itens:b.dados.split(/\n|;/).map(x=>x.trim()).filter(Boolean).slice(0,4)};
+  sl.push({tipo:"cta",titulo:"Gostou? Salve e compartilhe",destaque:"Salve",texto:b.cta});
+  return {slides:sl, legenda:`${tema}\n\n${b.cta}.\n\n#${cli.replace(/\W/g,"")}`};
 }
+function exemploGrace(){ return {slides:[
+  {tipo:"capa",titulo:"5 erros que derrubam o alcance do seu Reels",destaque:"alcance",texto:"Arraste e confira se você comete algum"},
+  {tipo:"numero",numero:"1",titulo:"Começo lento",texto:"Os primeiros segundos decidem se a pessoa fica. Abra com o gancho, não com apresentação."},
+  {tipo:"numero",numero:"2",titulo:"Sem legenda na tela",texto:"Muita gente assiste sem som. Legenda bem feita é parte da edição."},
+  {tipo:"numero",numero:"3",titulo:"Respiros longos",texto:"Corte as pausas e os “éééé”. Ritmo é o que segura a atenção até o fim."},
+  {tipo:"lista",titulo:"E os erros 4 e 5",itens:["Áudio baixo ou estourado","Final sem chamada para ação"]},
+  {tipo:"cta",titulo:"Quer vídeos que seguram a atenção?",destaque:"seguram",texto:"Fale com a Grace Studio"}],
+  legenda:"5 erros de edição que derrubam o alcance do seu Reels. Salve para revisar antes de postar o próximo.\n\nQuer vídeos que seguram a atenção? Fale com a Grace Studio.\n\n#reels #edicaodevideo #marketingdigital #gracestudio"}; }
 let sample=null;
 async function roteiroIA(b, onText){
-  const pedido=`Você é redator de redes sociais de concessionárias do Grupo IESA. Escreva um carrossel de Instagram em português do Brasil.
-Marca: ${MARCAS[b.marca].nome}. Tema: ${b.tema}. Objetivo: ${b.objetivo}. Tom: ${b.tom}. Número de slides: ${b.n}. Chamada final: ${b.cta}.
+  const pedido=`Você é redator de redes sociais da Grace Studio, agência de vídeo e conteúdo. Escreva um carrossel de Instagram em português do Brasil para um cliente da agência.
+Cliente: ${b.cliente.nome}. Segmento: ${b.cliente.segmento||"não informado"}. Tema: ${b.tema}. Objetivo: ${b.objetivo}. Tom: ${b.tom}. Número de slides: ${b.n}. Chamada final: ${b.cta}.
 Dados obrigatórios (use exatamente como estão, e não invente nenhum outro preço, condição, prazo ou dado técnico): ${b.dados||"nenhum"}.
 Regras: slide 1 é tipo "capa"; o último é tipo "cta" com "texto" igual à chamada final; os do meio variam entre "foto", "lista", "numero" e "citacao".
 Título com no máximo 7 palavras; "destaque" é 1 a 3 palavras que aparecem no título; "texto" com no máximo 22 palavras; "lista" tem "itens" (3 a 4, até 6 palavras cada); "numero" tem "numero" curto (ex.: "100%", "5 anos") só se o número estiver no tema ou nos dados, senão use outro tipo.
@@ -300,15 +345,16 @@ Responda só com JSON: {"slides":[{"tipo":"","titulo":"","destaque":"","texto":"
 }
 
 /* ---------- pipeline ---------- */
-function briefingAtual(){ return {marca:$("#marca").value,tema:$("#tema").value.trim(),objetivo:$("#objetivo").value,n:+$("#nslides").value,tom:$("#tom").value,cta:$("#cta").value.trim()||"Fale com a gente",dados:$("#dados").value.trim()}; }
+function briefingAtual(){ return {cliente:leCli(),tema:$("#tema").value.trim(),objetivo:$("#objetivo").value,n:+$("#nslides").value,tom:$("#tom").value,cta:$("#cta").value.trim()||"Fale com a gente",dados:$("#dados").value.trim()}; }
 async function gerar(b, comIA){
   rodando=true; pausado=false; $("#gerar").disabled=true; $("#pausa").disabled=false; $("#pausa").textContent="Pausar"; acoes=0; log=[]; $("#exemplo").textContent="gerando…";
   totalAcoes = 3 + 1 + b.n*5 + 3 + 2;
   for(const f of fotos) if(!f.img) f.img=await carrega(f.src);
+  await Promise.all([carregaFonte(b.cliente.fonteT),carregaFonte(b.cliente.fonteX)]);
   // 0 briefing
   marcaEtapa(0); palco("Lendo o <em>briefing</em>","Marca, tema, objetivo e dados obrigatórios"); $("#numero").textContent="";
-  $("#info").innerHTML=""; const pi=el("div","stream"); pi.textContent=`marca: ${MARCAS[b.marca].nome}\ntema: ${b.tema}\nobjetivo: ${b.objetivo}\ntom: ${b.tom}\nslides: ${b.n}\nchamada: ${b.cta}\ndados: ${b.dados||"—"}\nfotos: ${fotos.length}`; $("#info").append(pi);
-  registra("briefing-01",`marca ${MARCAS[b.marca].nome} · fonte e cor carregadas`); aponta("briefing-01",$("#marca")); await espera(600);
+  $("#info").innerHTML=""; const pi=el("div","stream"); pi.textContent=`cliente: ${b.cliente.nome} (${b.cliente.segmento||"sem segmento"})\ntema: ${b.tema}\nobjetivo: ${b.objetivo}\ntom: ${b.tom}\nslides: ${b.n}\nchamada: ${b.cta}\ndados: ${b.dados||"—"}\nfotos: ${fotos.length}`; $("#info").append(pi);
+  registra("briefing-01",`cliente ${b.cliente.nome} · fontes e cores carregadas`); aponta("briefing-01",$("#cliente")); await espera(600);
   registra("briefing-02",`${b.n} slides · tom ${b.tom.toLowerCase()}`); aponta("briefing-02",$("#nslides")); await espera(500);
   registra("briefing-03",`${fotos.length} fotos no banco de imagens`); aponta("briefing-03",$("#fotos")); await espera(500);
   // 1 roteiro
@@ -320,7 +366,7 @@ async function gerar(b, comIA){
     catch(e){ registra("roteiro-01","não deu para usar o Claude agora · usando modelo"); r=null; if(e&&e.code==="rate_limited") toast("Muitos pedidos ao Claude. Usei o roteiro de modelo; tente de novo em alguns minutos."); } }
   if(!r){ r=roteiroModelo(b); st.textContent=JSON.stringify(r,null,1); }
   r.slides=r.slides.slice(0,b.n);
-  C={marca:b.marca, slides:r.slides.map(s=>({...s})), legenda:r.legenda||""}; sel=0;
+  C={cliente:b.cliente, slides:r.slides.map(s=>({...s})), legenda:r.legenda||""}; sel=0;
   desenhaFaixa(0); grande(0);
   for(let i=0;i<C.slides.length;i++){ sel=i; desenhaFaixa(1); grande(1); registra("roteiro-0"+(i%3+1),`slide ${i+1}: “${C.slides[i].titulo}”`); aponta("roteiro-0"+(i%3+1),document.getElementById("b0_"+i)); await espera(550); }
   // 2 layout
@@ -330,9 +376,9 @@ async function gerar(b, comIA){
   for(let i=0;i<C.slides.length;i++){ sel=i; desenhaFaixa(2); grande(2); il.textContent+=`slide ${i+1} → ${LAYOUTS[C.slides[i].layout]}\n`; registra("layout-0"+(i%2+1),`slide ${i+1}: ${LAYOUTS[C.slides[i].layout].toLowerCase()}`); aponta("layout-0"+(i%2+1),document.getElementById("b1_"+i)); await espera(450); }
   // 3 tipografia
   marcaEtapa(3); palco("Ajustando a <em>tipografia</em>","Título no maior tamanho que cabe, sem cortar palavra");
-  $("#info").innerHTML=""; const it=el("div","stream"); it.textContent=`fonte: ${MARCAS[b.marca].fonte} (no lugar da fonte da marca)\n`; $("#info").append(it);
+  $("#info").innerHTML=""; const it=el("div","stream"); it.textContent=`título: ${b.cliente.fonteT} · texto: ${b.cliente.fonteX}\n`; $("#info").append(it);
   const cx=document.createElement("canvas").getContext("2d");
-  for(let i=0;i<C.slides.length;i++){ sel=i; const fam=MARCAS[b.marca].fonte; const t=ajusta(cx,C.slides[i].titulo,"",W-168,300,150,48,800,fam); desenhaFaixa(3); grande(3);
+  for(let i=0;i<C.slides.length;i++){ sel=i; const fam=b.cliente.fonteT; const t=ajusta(cx,C.slides[i].titulo,"",W-168,300,150,48,800,fam); desenhaFaixa(3); grande(3);
     it.textContent+=`slide ${i+1}: título ${t.tam}px · ${t.ls.length} linha(s)\n`; registra("tipo-0"+(i%2+1),`slide ${i+1}: título ${t.tam}px, ${t.ls.length} linha(s)`); aponta("tipo-0"+(i%2+1),document.getElementById("mini"+i)); await espera(380); }
   // 4 imagens
   marcaEtapa(4); palco("Escolhendo as <em>imagens</em>","Foto inteira na capa, recorte que preenche sem distorcer");
@@ -340,10 +386,10 @@ async function gerar(b, comIA){
   let k=0; for(let i=0;i<C.slides.length;i++){ const s=C.slides[i]; const usa = ["capa","foto","citacao","cta","numero"].includes(s.layout) && fotos.length; s.foto = usa ? (k++)%fotos.length : null; sel=i; desenhaFaixa(4); grande(4);
     ii.textContent+= `slide ${i+1}: ${s.foto!=null?"foto "+(s.foto+1)+" · recorte 4:5":"sem foto (fundo da marca)"}\n`; registra("imagem-0"+(i%3+1), s.foto!=null?`slide ${i+1}: foto ${s.foto+1}, recorte 4:5`:`slide ${i+1}: fundo sólido`); aponta("imagem-0"+(i%3+1),document.getElementById("b2_"+i)); await espera(420); }
   // 5 cor e marca
-  marcaEtapa(5); palco("Aplicando <em>cor e marca</em>","Cor da marca nos destaques, logo na capa e no fim, numeração e selo Ibama");
+  marcaEtapa(5); palco("Aplicando <em>cor e marca</em>","Cor do cliente nos destaques, logo na capa e no fim, numeração com seta");
   $("#info").innerHTML=""; const ic=el("div","stream"); $("#info").append(ic);
-  for(let i=0;i<C.slides.length;i++){ sel=i; desenhaFaixa(5); grande(5); ic.textContent+=`slide ${i+1}: cor ${MARCAS[b.marca].cor}${$("#ibama").checked?" · Ibama":""}${C.slides[i].layout==="capa"||C.slides[i].layout==="cta"?" · logo":""}\n`;
-    registra("cor-0"+(i%2+1),`slide ${i+1}: destaque em ${MARCAS[b.marca].cor}`); aponta("cor-0"+(i%2+1),document.getElementById("b3_"+i)); await espera(380); }
+  for(let i=0;i<C.slides.length;i++){ sel=i; desenhaFaixa(5); grande(5); ic.textContent+=`slide ${i+1}: cor ${b.cliente.cor}${b.cliente.ibama?" · Ibama":""}${C.slides[i].layout==="capa"||C.slides[i].layout==="cta"?" · logo":""}\n`;
+    registra("cor-0"+(i%2+1),`slide ${i+1}: destaque em ${b.cliente.cor}`); aponta("cor-0"+(i%2+1),document.getElementById("b3_"+i)); await espera(380); }
   // 6 pronto
   marcaEtapa(6); palco("Pronto para <em>exportar</em>","PNG 1080×1350 (4:5), um arquivo por slide, em um .zip");
   registra("export-01",`${C.slides.length} slides prontos · 1080×1350`); aponta("export-01",$("#exportar")); await espera(400);
@@ -386,7 +432,7 @@ $("#exportar").onclick=async()=>{
     const zip=new JSZip(); const cv=document.createElement("canvas"); cv.width=W; cv.height=H; const ctx=cv.getContext("2d");
     for(let i=0;i<C.slides.length;i++){ render(ctx,C.slides[i],i,C.slides.length); const blob=await new Promise(r=>cv.toBlob(r,"image/png")); zip.file(`slide_${String(i+1).padStart(2,"0")}.png`,blob); }
     if(C.legenda) zip.file("legenda.txt", C.legenda);
-    const z=await zip.generateAsync({type:"blob"}); const nome=`carrossel_${C.marca}_${new Date().toISOString().slice(0,10)}.zip`;
+    const z=await zip.generateAsync({type:"blob"}); const nome=`carrossel_${C.cliente.nome.toLowerCase().replace(/[^a-z0-9]+/g,"_")}_${new Date().toISOString().slice(0,10)}.zip`;
     if(!downloads){ toast("Baixar arquivos não está disponível nesta visualização. Abra a página no claude.ai."); }
     else { await downloads.save({filename:nome,data:z}); toast("Carrossel baixado: "+nome); }
   }catch(e){ toast(e&&e.code==="declined"?"Download cancelado.":"Não deu para baixar: "+(e.message||e.code)); }
@@ -395,19 +441,16 @@ $("#exportar").onclick=async()=>{
 
 /* ---------- início: exemplo já montado ---------- */
 (async()=>{
-  for(const k of ["logo_grupo_iesa","logo_bmw","logo_volvo","ibama"]) imgs[k]=await carrega(A[k]);
-  for(const f of fotos) f.img=await carrega(f.src);
-  desenhaFotos();
-  try{ await document.fonts.load('800 80px "Figtree"'); await document.fonts.load('400 40px "Figtree"'); await document.fonts.load('800 80px "Manrope"'); }catch(e){}
+  imgs.ibama=await carrega(A.ibama);
   let salvo=null; try{ salvo=JSON.parse(localStorage.getItem("gs_carrossel")||"null"); }catch(e){}
-  const b = salvo&&salvo.b || briefingAtual();
-  if(salvo&&salvo.C){ C=salvo.C; Object.entries({marca:b.marca,tema:b.tema,cta:b.cta,dados:b.dados||""}).forEach(([k,v])=>$("#"+k).value=v); $("#exemplo").textContent="último carrossel"; }
-  else { const r=roteiroModelo(b); C={marca:b.marca,slides:r.slides,legenda:r.legenda}; let k=0;
-    C.slides.forEach((s,i)=>{ s.layout= i===0?"capa": i===C.slides.length-1?"cta": s.tipo; s.foto= ["capa","foto","citacao","cta","numero"].includes(s.layout)?(k++)%fotos.length:null; }); }
+  const idIni = salvo&&salvo.C&&salvo.C.cliente&&clientes.some(c=>c.id===salvo.C.cliente.id) ? salvo.C.cliente.id : clientes[0].id;
+  listaClientes(idIni); await preencheCli(cliAtual());
+  if(salvo&&salvo.C&&salvo.C.cliente){ C=salvo.C; await Promise.all([carregaFonte(C.cliente.fonteT),carregaFonte(C.cliente.fonteX)]); if(salvo.b){ $("#tema").value=salvo.b.tema||""; $("#cta").value=salvo.b.cta||""; $("#dados").value=salvo.b.dados||""; } }
+  else { const r=exemploGrace(); C={cliente:leCli(),slides:r.slides,legenda:r.legenda}; C.slides.forEach((s,i)=>{ s.layout= i===0?"capa": i===C.slides.length-1?"cta": s.tipo; s.foto=null; }); }
   acoes=0; terminar(); $("#exemplo").textContent= salvo?"último carrossel":"exemplo";
   const c=window.claude;
   if(c&&c.use){ const [s,d]=await Promise.all([c.use("sample"),c.use("downloads")]); sample=s; downloads=d; }
-  $("#aviso-ia").innerHTML = sample ? "O roteiro é escrito pelo Claude a partir do briefing. Só entram os dados que você informar." : "<b>Sem o Claude nesta visualização:</b> o roteiro sai de um modelo pronto e você edita os textos depois.";
-  $("#aviso-ia").append(" Prévia com fonte parecida com a da marca.");
+  $("#aviso-ia").innerHTML = sample ? "O roteiro é escrito pelo Claude a partir do briefing. Só entram as informações que você passar." : "<b>Sem o Claude nesta visualização:</b> o roteiro sai de um modelo pronto e você edita os textos depois.";
+  $("#aviso-ia").append(" Sem fotos, o slide usa um fundo gráfico nas cores do cliente.");
 })();
 </script>
